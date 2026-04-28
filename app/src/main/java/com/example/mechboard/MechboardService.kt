@@ -46,14 +46,14 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     }
 
     override fun onCreateInputView(): View {
-        // null parent is correct here: InputMethodService owns the root
-        // window and the inflated view has no existing parent container.
-        keyboardView = layoutInflater
-            .inflate(R.layout.input, null) as KeyboardView
+        // Inflate the wrapper layout (LinearLayout) and look up the KeyboardView
+        // inside it. Casting the root to KeyboardView would throw ClassCastException.
+        val rootView = layoutInflater.inflate(R.layout.input, null)
+        keyboardView = rootView.findViewById(R.id.keyboard_view)
         keyboardView.keyboard = keyboard
         keyboardView.setOnKeyboardActionListener(this)
         keyboardView.isPreviewEnabled = false
-        return keyboardView
+        return rootView
     }
 
     override fun onDestroy() {
@@ -72,7 +72,19 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         when (primaryCode) {
             Keyboard.KEYCODE_DELETE -> ic.deleteSurroundingText(1, 0)
             Keyboard.KEYCODE_SHIFT  -> handleShift()
-            Keyboard.KEYCODE_DONE   -> ic.performEditorAction(EditorInfo.IME_ACTION_GO)
+            Keyboard.KEYCODE_DONE   -> {
+                // Honour the field's requested action (Search, Send, Next, Done…).
+                // Fall back to committing a newline for multiline fields (no action set).
+                val imeAction = currentInputEditorInfo
+                    ?.imeOptions
+                    ?.and(EditorInfo.IME_MASK_ACTION)
+                    ?: EditorInfo.IME_ACTION_NONE
+                if (imeAction != EditorInfo.IME_ACTION_NONE) {
+                    ic.performEditorAction(imeAction)
+                } else {
+                    ic.commitText("\n", 1)
+                }
+            }
             KEYCODE_SPACE           -> ic.commitText(" ", 1)
             KEYCODE_SETTINGS        -> openSettings()
             else -> {
@@ -88,7 +100,8 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     override fun onPress(primaryCode: Int) {}
     override fun onRelease(primaryCode: Int) {}
     override fun onText(text: CharSequence?) {
-        currentInputConnection?.commitText(text, 1)
+        val safeText = text ?: return
+        currentInputConnection?.commitText(safeText, 1)
     }
     override fun swipeLeft() {}
     override fun swipeRight() {}

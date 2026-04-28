@@ -13,7 +13,6 @@
     <ListPreference
         android:key="sound_profile"
         android:title="@string/pref_sound_profile_title"
-        android:summary="%s"
         android:defaultValue="cherry_blue"
         android:dependency="sound_enabled"
         app:useSimpleSummaryProvider="true" />
