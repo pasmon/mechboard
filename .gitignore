@@ -1,8 +1,6 @@
 # Gradle
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!gradle-wrapper.jar
 
 # Android / Kotlin
 *.class
@@ -11,6 +9,9 @@ build/
 *.apk
 *.ap_
 *.aab
+
+# Re-include the Gradle wrapper JAR so ./gradlew works in clean environments
+!gradle/wrapper/gradle-wrapper.jar
 
 # Local properties (contains SDK path - not for VCS)
 local.properties
