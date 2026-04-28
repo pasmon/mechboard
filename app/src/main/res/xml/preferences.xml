@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Master on/off toggle -->
+    <SwitchPreferenceCompat
+        android:key="sound_enabled"
+        android:title="@string/pref_sound_enabled_title"
+        android:summary="@string/pref_sound_enabled_summary"
+        android:defaultValue="true" />
+
+    <!-- Sound profile chooser -->
+    <ListPreference
+        android:key="sound_profile"
+        android:title="@string/pref_sound_profile_title"
+        android:defaultValue="cherry_blue"
+        android:dependency="sound_enabled"
+        app:useSimpleSummaryProvider="true" />
+
+    <!-- Volume (0–100) -->
+    <SeekBarPreference
+        android:key="volume"
+        android:title="@string/pref_volume_title"
+        android:summary="@string/pref_volume_summary"
+        android:defaultValue="80"
+        android:min="0"
+        android:max="100"
+        android:dependency="sound_enabled" />
+
+</PreferenceScreen>

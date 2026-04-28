@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+
+# Android / Kotlin
+*.class
+*.log
+*.jar
+*.apk
+*.ap_
+*.aab
+
+# Re-include the Gradle wrapper JAR so ./gradlew works in clean environments
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local properties (contains SDK path - not for VCS)
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# OS
+.DS_Store
+Thumbs.db
