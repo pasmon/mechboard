@@ -6,4 +6,5 @@
     <color name="keyBackground">#2D2D44</color>
     <color name="keyTextColor">#FFFFFF</color>
     <color name="keyboardBackground">#1B1B2F</color>
+    <color name="ic_launcher_background">#1B1B2F</color>
 </resources>
