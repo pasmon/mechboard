@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mechboard</string>
+    <string name="settings_title">Mechboard Settings</string>
+
+    <!-- Preferences -->
+    <string name="pref_sound_enabled_title">Key sounds</string>
+    <string name="pref_sound_enabled_summary">Play a sound on every key press</string>
+    <string name="pref_sound_profile_title">Sound profile</string>
+    <string name="pref_volume_title">Volume</string>
+    <string name="pref_volume_summary">Key-click volume (0 – 100)</string>
+</resources>
