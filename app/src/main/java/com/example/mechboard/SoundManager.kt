@@ -40,26 +40,27 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
         private set
 
     init {
-        val sp = soundPool ?: return
-        // Track which samples finish loading so playKeySound() skips unready samples.
-        sp.setOnLoadCompleteListener { _, sampleId, status ->
-            if (status == 0) {
-                sampleIds.entries
-                    .firstOrNull { it.value == sampleId }
-                    ?.key
-                    ?.let { loadedSamples.add(it) }
-            }
-        }
-        SoundProfile.values()
-            .filter { it.rawFileName != null }
-            .forEach { profile ->
-                val resId = context.resources.getIdentifier(
-                    profile.rawFileName, "raw", context.packageName
-                )
-                if (resId != 0) {
-                    sampleIds[profile] = sp.load(context, resId, 1)
+        soundPool?.let { sp ->
+            // Track which samples finish loading so playKeySound() skips unready samples.
+            sp.setOnLoadCompleteListener { _, sampleId, status ->
+                if (status == 0) {
+                    sampleIds.entries
+                        .firstOrNull { it.value == sampleId }
+                        ?.key
+                        ?.let { loadedSamples.add(it) }
                 }
             }
+            SoundProfile.values()
+                .filter { it.rawFileName != null }
+                .forEach { profile ->
+                    val resId = context.resources.getIdentifier(
+                        profile.rawFileName, "raw", context.packageName
+                    )
+                    if (resId != 0) {
+                        sampleIds[profile] = sp.load(context, resId, 1)
+                    }
+                }
+        }
     }
 
     // -------------------------------------------------------------------------
