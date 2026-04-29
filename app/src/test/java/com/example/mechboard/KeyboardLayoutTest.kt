@@ -1,6 +1,7 @@
 package com.example.mechboard
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Test
 
@@ -15,18 +16,14 @@ class KeyboardLayoutTest {
     @Test
     fun `all layouts have non-blank display names`() {
         KeyboardLayout.values().forEach { layout ->
-            assert(layout.displayName.isNotBlank()) {
-                "${layout.name} has a blank displayName"
-            }
+            assertFalse("${layout.name} has a blank displayName", layout.displayName.isBlank())
         }
     }
 
     @Test
     fun `all layouts have non-blank xmlResNames`() {
         KeyboardLayout.values().forEach { layout ->
-            assert(layout.xmlResName.isNotBlank()) {
-                "${layout.name} has a blank xmlResName"
-            }
+            assertFalse("${layout.name} has a blank xmlResName", layout.xmlResName.isBlank())
         }
     }
 

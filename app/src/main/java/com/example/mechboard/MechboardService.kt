@@ -59,11 +59,17 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     override fun onCreate() {
         super.onCreate()
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        layoutCycle = KeyboardLayout.values().mapNotNull { layout ->
+        val resolvedLayoutCycle = KeyboardLayout.values().mapNotNull { layout ->
             val resId = resources.getIdentifier(layout.xmlResName, "xml", packageName)
             if (resId == 0) null else layout to resId
         }
-        currentLayoutResId = layoutResIdFromName(
+        layoutCycle = resolvedLayoutCycle.ifEmpty {
+            throw IllegalStateException(
+                "No keyboard layouts could be resolved from KeyboardLayout. " +
+                    "Check xmlResName values and XML resources under res/xml."
+            )
+        }
+        currentLayoutResId = layoutResIdFromId(
             prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
                 ?: KeyboardLayout.ENGLISH.id
         )
@@ -166,9 +172,9 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
      * Called on startup and whenever the preference changes (e.g. from [SettingsActivity]).
      */
     private fun applyLayoutFromPrefs() {
-        val name = prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
+        val layoutId = prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
             ?: KeyboardLayout.ENGLISH.id
-        val newResId = layoutResIdFromName(name)
+        val newResId = layoutResIdFromId(layoutId)
         if (newResId == currentLayoutResId) return
         currentLayoutResId = newResId
         isCapsLock = false
@@ -180,8 +186,8 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     }
 
     /** Maps a stored layout id (e.g. [KeyboardLayout.ENGLISH.id]) to its XML resource id. */
-    private fun layoutResIdFromName(name: String): Int =
-        layoutCycle.firstOrNull { it.first.id == name }?.second ?: layoutCycle.first().second
+    private fun layoutResIdFromId(layoutId: String): Int =
+        layoutCycle.firstOrNull { it.first.id == layoutId }?.second ?: layoutCycle.first().second
 
     private fun openSettings() {
         val intent = Intent(this, SettingsActivity::class.java)
