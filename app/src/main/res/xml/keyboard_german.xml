@@ -6,7 +6,7 @@
       - Row 1: z and y are swapped (QWERTZ)
       - Row 2: a s d f g h j k l ö ä  (11 keys @ 9 %p, no leading gap)
       - Row 3: ⇧ y x c v b n m ⌫  (y takes z's original position)
-      - Row 4: ⚙ ,  [space]  ü  ß  .  🌐  ↵
+      - Row 4: ⚙ ,  [space]  ü  ß  .  ↵
 -->
 <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
     android:keyWidth="10%p"
@@ -62,16 +62,15 @@
              android:isRepeatable="true" />
     </Row>
 
-    <!-- Row 4: Settings, comma, Space, ü, ß, period, lang-switch, Enter -->
+    <!-- Row 4: Settings, comma, Space, ü, ß, period, Enter -->
     <Row android:rowEdgeFlags="bottom">
         <Key android:codes="-101" android:keyLabel="⚙"
              android:keyWidth="10%p" android:keyEdgeFlags="left" />
         <Key android:codes="44"   android:keyLabel=","   android:keyWidth="10%p" />
-        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="30%p" />
+        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="40%p" />
         <Key android:codes="252"  android:keyLabel="ü"   android:keyWidth="10%p" />
         <Key android:codes="223"  android:keyLabel="ß"   android:keyWidth="10%p" />
         <Key android:codes="46"   android:keyLabel="."   android:keyWidth="10%p" />
-        <Key android:codes="-102" android:keyLabel="🌐"  android:keyWidth="10%p" />
         <Key android:codes="-4"   android:keyLabel="↵"
              android:keyWidth="10%p" android:keyEdgeFlags="right" />
     </Row>
