@@ -1,7 +1,8 @@
 package com.example.mechboard
 
 /**
- * SharedPreferences key constants used by [SoundManager] and [SettingsFragment].
+ * SharedPreferences key constants used by [SoundManager], [SettingsFragment],
+ * and [MechboardService].
  *
  * Keeping them in a separate file means they have no Android-SDK dependency
  * and can be referenced from plain JVM unit tests.

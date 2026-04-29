@@ -3,6 +3,7 @@
 package com.example.mechboard
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
@@ -28,6 +29,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
      */
     private lateinit var keyboard: Keyboard
     private lateinit var soundManager: SoundManager
+    private lateinit var prefs: SharedPreferences
 
     private var isCapsLock = false
     /** Resource id of the currently active keyboard XML definition. */
@@ -51,7 +53,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
     override fun onCreate() {
         super.onCreate()
-        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         currentLayoutResId = layoutResIdFromName(
             prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, LAYOUT_ENGLISH) ?: LAYOUT_ENGLISH
         )
@@ -141,18 +143,18 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         keyboard = Keyboard(this, currentLayoutResId)
         keyboardView.keyboard = keyboard
         keyboardView.invalidateAllKeys()
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+        prefs.edit()
             .putString(PrefsKeys.KEYBOARD_LAYOUT, layoutNameFromResId(currentLayoutResId))
             .apply()
     }
 
     /** Maps a stored layout name (e.g. [LAYOUT_FINNISH]) to its XML resource id. */
     private fun layoutResIdFromName(name: String): Int =
-        layoutCycle.firstOrNull { it.first == name }?.second ?: R.xml.keyboard
+        layoutCycle.firstOrNull { it.first == name }?.second ?: layoutCycle.first().second
 
     /** Maps a keyboard XML resource id back to its stored layout name. */
     private fun layoutNameFromResId(resId: Int): String =
-        layoutCycle.firstOrNull { it.second == resId }?.first ?: LAYOUT_ENGLISH
+        layoutCycle.firstOrNull { it.second == resId }?.first ?: layoutCycle.first().first
 
     private fun openSettings() {
         val intent = Intent(this, SettingsActivity::class.java)

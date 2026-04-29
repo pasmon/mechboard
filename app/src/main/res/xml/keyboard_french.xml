@@ -39,7 +39,7 @@
         <Key android:codes="107" android:keyLabel="k"  android:keyWidth="9%p" />
         <Key android:codes="108" android:keyLabel="l"  android:keyWidth="9%p" />
         <Key android:codes="233" android:keyLabel="é"  android:keyWidth="9%p" />
-        <Key android:codes="231" android:keyLabel="ç"  android:keyWidth="9%p"
+        <Key android:codes="231" android:keyLabel="ç"  android:keyWidth="10%p"
              android:keyEdgeFlags="right" />
     </Row>
 
