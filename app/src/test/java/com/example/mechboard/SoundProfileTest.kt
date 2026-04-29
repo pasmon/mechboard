@@ -75,6 +75,9 @@ class SoundProfileTest {
             "cherry_brown",
             "topre",
             "alps",
+            "nk_cream",
+            "holy_panda",
+            "typewriter",
             "silent"
         )
         val actualIds = SoundProfile.values().map { it.id }.toSet()
