@@ -33,19 +33,24 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
     private var isCapsLock = false
     /** Resource id of the currently active keyboard XML definition. */
-    private var currentLayoutResId = R.xml.keyboard
+    private var currentLayoutResId = 0
 
     /**
-     * Ordered list of all supported layouts. The language-switch key cycles
-     * through them in sequence, wrapping back to the first entry.
+     * Ordered list of all supported layouts built from [KeyboardLayout] entries.
+     * The language-switch key cycles through them in sequence.
+     * Initialised in [onCreate] where [android.content.res.Resources] is available.
      */
-    private val layoutCycle: List<Pair<String, Int>> = listOf(
-        LAYOUT_ENGLISH to R.xml.keyboard,
-        LAYOUT_FINNISH to R.xml.keyboard_finnish,
-        LAYOUT_GERMAN  to R.xml.keyboard_german,
-        LAYOUT_FRENCH  to R.xml.keyboard_french,
-        LAYOUT_SPANISH to R.xml.keyboard_spanish,
-    )
+    private lateinit var layoutCycle: List<Pair<KeyboardLayout, Int>>
+
+    /**
+     * Listens for changes to [PrefsKeys.KEYBOARD_LAYOUT] made via [SettingsActivity]
+     * and applies the new layout immediately, even while the keyboard is visible.
+     */
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == PrefsKeys.KEYBOARD_LAYOUT) {
+            applyLayoutFromPrefs()
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -54,11 +59,23 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     override fun onCreate() {
         super.onCreate()
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        currentLayoutResId = layoutResIdFromName(
-            prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, LAYOUT_ENGLISH) ?: LAYOUT_ENGLISH
+        val resolvedLayoutCycle = KeyboardLayout.values().mapNotNull { layout ->
+            val resId = resources.getIdentifier(layout.xmlResName, "xml", packageName)
+            if (resId == 0) null else layout to resId
+        }
+        layoutCycle = resolvedLayoutCycle.ifEmpty {
+            throw IllegalStateException(
+                "No keyboard layouts could be resolved from KeyboardLayout. " +
+                    "Check xmlResName values and XML resources under res/xml."
+            )
+        }
+        currentLayoutResId = layoutResIdFromId(
+            prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
+                ?: KeyboardLayout.ENGLISH.id
         )
         keyboard = Keyboard(this, currentLayoutResId)
         soundManager = SoundManager(this, prefs)
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
     }
 
     override fun onCreateInputView(): View {
@@ -74,6 +91,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
     override fun onDestroy() {
         super.onDestroy()
+        prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         soundManager.release()
     }
 
@@ -138,23 +156,38 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     private fun switchLanguage() {
         val currentIndex = layoutCycle.indexOfFirst { it.second == currentLayoutResId }
         val nextIndex = (currentIndex + 1) % layoutCycle.size
-        currentLayoutResId = layoutCycle[nextIndex].second
+        val (nextLayout, nextResId) = layoutCycle[nextIndex]
+        currentLayoutResId = nextResId
         isCapsLock = false
         keyboard = Keyboard(this, currentLayoutResId)
         keyboardView.keyboard = keyboard
         keyboardView.invalidateAllKeys()
         prefs.edit()
-            .putString(PrefsKeys.KEYBOARD_LAYOUT, layoutNameFromResId(currentLayoutResId))
+            .putString(PrefsKeys.KEYBOARD_LAYOUT, nextLayout.id)
             .apply()
     }
 
-    /** Maps a stored layout name (e.g. [LAYOUT_FINNISH]) to its XML resource id. */
-    private fun layoutResIdFromName(name: String): Int =
-        layoutCycle.firstOrNull { it.first == name }?.second ?: layoutCycle.first().second
+    /**
+     * Applies the layout stored in [PrefsKeys.KEYBOARD_LAYOUT] immediately.
+     * Called on startup and whenever the preference changes (e.g. from [SettingsActivity]).
+     */
+    private fun applyLayoutFromPrefs() {
+        val layoutId = prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
+            ?: KeyboardLayout.ENGLISH.id
+        val newResId = layoutResIdFromId(layoutId)
+        if (newResId == currentLayoutResId) return
+        currentLayoutResId = newResId
+        isCapsLock = false
+        keyboard = Keyboard(this, currentLayoutResId)
+        if (::keyboardView.isInitialized) {
+            keyboardView.keyboard = keyboard
+            keyboardView.invalidateAllKeys()
+        }
+    }
 
-    /** Maps a keyboard XML resource id back to its stored layout name. */
-    private fun layoutNameFromResId(resId: Int): String =
-        layoutCycle.firstOrNull { it.second == resId }?.first ?: layoutCycle.first().first
+    /** Maps a stored layout id (e.g. [KeyboardLayout.ENGLISH.id]) to its XML resource id. */
+    private fun layoutResIdFromId(layoutId: String): Int =
+        layoutCycle.firstOrNull { it.first.id == layoutId }?.second ?: layoutCycle.first().second
 
     private fun openSettings() {
         val intent = Intent(this, SettingsActivity::class.java)
@@ -177,12 +210,5 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
         /** Key code for the language-switch key (negative = custom). */
         const val KEYCODE_LANG_SWITCH = -102
-
-        /** Layout identifier stored in [PrefsKeys.KEYBOARD_LAYOUT]. */
-        const val LAYOUT_ENGLISH = "english"
-        const val LAYOUT_FINNISH = "finnish"
-        const val LAYOUT_GERMAN  = "german"
-        const val LAYOUT_FRENCH  = "french"
-        const val LAYOUT_SPANISH = "spanish"
     }
 }
