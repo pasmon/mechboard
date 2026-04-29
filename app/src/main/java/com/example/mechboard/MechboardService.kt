@@ -33,6 +33,18 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     /** Resource id of the currently active keyboard XML definition. */
     private var currentLayoutResId = R.xml.keyboard
 
+    /**
+     * Ordered list of all supported layouts. The language-switch key cycles
+     * through them in sequence, wrapping back to the first entry.
+     */
+    private val layoutCycle: List<Pair<String, Int>> = listOf(
+        LAYOUT_ENGLISH to R.xml.keyboard,
+        LAYOUT_FINNISH to R.xml.keyboard_finnish,
+        LAYOUT_GERMAN  to R.xml.keyboard_german,
+        LAYOUT_FRENCH  to R.xml.keyboard_french,
+        LAYOUT_SPANISH to R.xml.keyboard_spanish,
+    )
+
     // -------------------------------------------------------------------------
     // Lifecycle
     // -------------------------------------------------------------------------
@@ -122,11 +134,9 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     }
 
     private fun switchLanguage() {
-        currentLayoutResId = if (currentLayoutResId == R.xml.keyboard) {
-            R.xml.keyboard_finnish
-        } else {
-            R.xml.keyboard
-        }
+        val currentIndex = layoutCycle.indexOfFirst { it.second == currentLayoutResId }
+        val nextIndex = (currentIndex + 1) % layoutCycle.size
+        currentLayoutResId = layoutCycle[nextIndex].second
         isCapsLock = false
         keyboard = Keyboard(this, currentLayoutResId)
         keyboardView.keyboard = keyboard
@@ -138,11 +148,11 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
     /** Maps a stored layout name (e.g. [LAYOUT_FINNISH]) to its XML resource id. */
     private fun layoutResIdFromName(name: String): Int =
-        if (name == LAYOUT_FINNISH) R.xml.keyboard_finnish else R.xml.keyboard
+        layoutCycle.firstOrNull { it.first == name }?.second ?: R.xml.keyboard
 
     /** Maps a keyboard XML resource id back to its stored layout name. */
     private fun layoutNameFromResId(resId: Int): String =
-        if (resId == R.xml.keyboard_finnish) LAYOUT_FINNISH else LAYOUT_ENGLISH
+        layoutCycle.firstOrNull { it.second == resId }?.first ?: LAYOUT_ENGLISH
 
     private fun openSettings() {
         val intent = Intent(this, SettingsActivity::class.java)
@@ -169,5 +179,8 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         /** Layout identifier stored in [PrefsKeys.KEYBOARD_LAYOUT]. */
         const val LAYOUT_ENGLISH = "english"
         const val LAYOUT_FINNISH = "finnish"
+        const val LAYOUT_GERMAN  = "german"
+        const val LAYOUT_FRENCH  = "french"
+        const val LAYOUT_SPANISH = "spanish"
     }
 }
