@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    QWERTY keyboard definition consumed by android.inputmethodservice.Keyboard.
+    Spanish QWERTY keyboard definition.
 
-    Layout:
-      Row 1: q w e r t y u i o p
-      Row 2:  a s d f g h j k l
-      Row 3: ⇧ z x c v b n m ⌫
-      Row 4: ⚙ ,  [space]  .  🌐  ↵
+    Differences from English QWERTY:
+      - Row 2: a s d f g h j k l ñ  (10 keys @ 10 %p, no leading gap)
+      - Row 4: ⚙ ,  [space]  ¿  ¡  .  🌐  ↵
 -->
 <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
     android:keyWidth="10%p"
@@ -14,7 +12,7 @@
     android:verticalGap="0px"
     android:keyHeight="@dimen/key_height">
 
-    <!-- Row 1: q–p -->
+    <!-- Row 1: q–p (same as English) -->
     <Row>
         <Key android:codes="113" android:keyLabel="q" android:keyEdgeFlags="left" />
         <Key android:codes="119" android:keyLabel="w" />
@@ -28,10 +26,9 @@
         <Key android:codes="112" android:keyLabel="p" android:keyEdgeFlags="right" />
     </Row>
 
-    <!-- Row 2: a–l (5 % indent) -->
+    <!-- Row 2: a–l + ñ  (10 keys @ 10 %p, no leading gap) -->
     <Row>
-        <Key android:codes="97"  android:keyLabel="a" android:keyEdgeFlags="left"
-             android:horizontalGap="5%p" />
+        <Key android:codes="97"  android:keyLabel="a"  android:keyEdgeFlags="left" />
         <Key android:codes="115" android:keyLabel="s" />
         <Key android:codes="100" android:keyLabel="d" />
         <Key android:codes="102" android:keyLabel="f" />
@@ -39,12 +36,13 @@
         <Key android:codes="104" android:keyLabel="h" />
         <Key android:codes="106" android:keyLabel="j" />
         <Key android:codes="107" android:keyLabel="k" />
-        <Key android:codes="108" android:keyLabel="l" android:keyEdgeFlags="right" />
+        <Key android:codes="108" android:keyLabel="l" />
+        <Key android:codes="241" android:keyLabel="ñ"  android:keyEdgeFlags="right" />
     </Row>
 
-    <!-- Row 3: Shift, z–m, Delete -->
+    <!-- Row 3: Shift, z–m, Delete (same as English) -->
     <Row>
-        <Key android:codes="-1"   android:keyLabel="⇧"
+        <Key android:codes="-1"  android:keyLabel="⇧"
              android:keyWidth="15%p" android:keyEdgeFlags="left"
              android:isModifier="true" android:isSticky="true" />
         <Key android:codes="122" android:keyLabel="z" />
@@ -59,14 +57,16 @@
              android:isRepeatable="true" />
     </Row>
 
-    <!-- Row 4: Settings, comma, Space, period, 🌐 (lang-switch), Enter -->
+    <!-- Row 4: Settings, comma, Space, ¿, ¡, period, lang-switch, Enter -->
     <Row android:rowEdgeFlags="bottom">
         <Key android:codes="-101" android:keyLabel="⚙"
              android:keyWidth="10%p" android:keyEdgeFlags="left" />
-        <Key android:codes="44"   android:keyLabel="," android:keyWidth="10%p" />
-        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="50%p" />
-        <Key android:codes="46"   android:keyLabel="." android:keyWidth="10%p" />
-        <Key android:codes="-102" android:keyLabel="🌐" android:keyWidth="10%p" />
+        <Key android:codes="44"   android:keyLabel=","   android:keyWidth="10%p" />
+        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="30%p" />
+        <Key android:codes="191"  android:keyLabel="¿"   android:keyWidth="10%p" />
+        <Key android:codes="161"  android:keyLabel="¡"   android:keyWidth="10%p" />
+        <Key android:codes="46"   android:keyLabel="."   android:keyWidth="10%p" />
+        <Key android:codes="-102" android:keyLabel="🌐"  android:keyWidth="10%p" />
         <Key android:codes="-4"   android:keyLabel="↵"
              android:keyWidth="10%p" android:keyEdgeFlags="right" />
     </Row>
