@@ -17,6 +17,13 @@
         android:dependency="sound_enabled"
         app:useSimpleSummaryProvider="true" />
 
+    <!-- Keyboard language chooser -->
+    <ListPreference
+        android:key="keyboard_layout"
+        android:title="@string/pref_keyboard_layout_title"
+        android:defaultValue="english"
+        app:useSimpleSummaryProvider="true" />
+
     <!-- Volume (0–100) -->
     <SeekBarPreference
         android:key="volume"
