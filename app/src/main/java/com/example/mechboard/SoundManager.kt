@@ -24,32 +24,34 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
 
     /**
      * Maps each profile that has audio to its SoundPool *sample ID* as returned
-     * by [SoundPool.load]. Loading is asynchronous; [loadedSamples] tracks which
-     * samples have fully loaded and are safe to pass to [SoundPool.play].
+     * by [SoundPool.load]. A value of 0 indicates the load failed.
      */
     private val sampleIds: MutableMap<SoundProfile, Int> = mutableMapOf()
 
-    /** Profiles whose samples have finished loading and are ready to play. */
-    private val loadedSamples: MutableSet<SoundProfile> = mutableSetOf()
-
     private val sharedPrefs: SharedPreferences = prefs
 
+    @Volatile
     var currentProfile: SoundProfile = SoundProfile.fromId(
         prefs.getString(PREF_SOUND_PROFILE, DEFAULT_PROFILE_ID) ?: DEFAULT_PROFILE_ID
     )
         private set
 
+    /**
+     * Keeps [currentProfile] in sync whenever the user changes the profile via
+     * [SettingsFragment], which writes directly to [SharedPreferences] without
+     * going through [setProfile].
+     */
+    private val prefChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == PREF_SOUND_PROFILE) {
+            currentProfile = SoundProfile.fromId(
+                sharedPrefs.getString(PREF_SOUND_PROFILE, DEFAULT_PROFILE_ID) ?: DEFAULT_PROFILE_ID
+            )
+        }
+    }
+
     init {
+        sharedPrefs.registerOnSharedPreferenceChangeListener(prefChangeListener)
         soundPool?.let { sp ->
-            // Track which samples finish loading so playKeySound() skips unready samples.
-            sp.setOnLoadCompleteListener { _, sampleId, status ->
-                if (status == 0) {
-                    sampleIds.entries
-                        .firstOrNull { it.value == sampleId }
-                        ?.key
-                        ?.let { loadedSamples.add(it) }
-                }
-            }
             SoundProfile.values()
                 .filter { it.rawFileName != null }
                 .forEach { profile ->
@@ -67,13 +69,13 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
     // Public API
     // -------------------------------------------------------------------------
 
-    /** Plays the currently selected key-click sound (no-op when silent, muted, or sample not yet loaded). */
+    /** Plays the currently selected key-click sound (no-op when silent, muted, or sample unavailable). */
     fun playKeySound() {
         if (!isSoundEnabled) return
         val profile = currentProfile
         if (profile == SoundProfile.SILENT) return
-        if (profile !in loadedSamples) return   // sample still loading
-        val sampleId = sampleIds[profile] ?: return
+        // A sample ID of 0 means the load failed; skip it silently.
+        val sampleId = sampleIds[profile]?.takeIf { it > 0 } ?: return
         val vol = volume
         soundPool?.play(sampleId, vol, vol, 1, 0, 1.0f)
     }
@@ -98,6 +100,7 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
 
     /** Releases the underlying [SoundPool]. Must be called in onDestroy. */
     fun release() {
+        sharedPrefs.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
         soundPool?.release()
         soundPool = null
     }
@@ -108,7 +111,7 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
 
     private fun buildSoundPool(): SoundPool {
         val attrs = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_GAME)
+            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
         return SoundPool.Builder()
