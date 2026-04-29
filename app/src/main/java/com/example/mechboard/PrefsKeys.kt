@@ -7,7 +7,8 @@ package com.example.mechboard
  * and can be referenced from plain JVM unit tests.
  */
 object PrefsKeys {
-    const val SOUND_PROFILE = "sound_profile"
-    const val SOUND_ENABLED = "sound_enabled"
-    const val VOLUME        = "volume"
+    const val SOUND_PROFILE   = "sound_profile"
+    const val SOUND_ENABLED   = "sound_enabled"
+    const val VOLUME          = "volume"
+    const val KEYBOARD_LAYOUT = "keyboard_layout"
 }
