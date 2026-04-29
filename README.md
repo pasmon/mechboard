@@ -75,7 +75,7 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | Class | Role |
 |---|---|
 | `MechboardService` | Main `InputMethodService`; inflates the keyboard view, routes key events, manages caps-lock state, and triggers sound playback |
-| `SoundManager` | Wraps `SoundPool`; loads WAV assets per profile, reads/writes preferences, exposes `playKeySound()` |
+| `SoundManager` | Wraps `SoundPool`; loads short sound effects (WAV/MP3) per profile, reads/writes preferences, exposes `playKeySound()` |
 | `SoundProfile` | Enum of the nine profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
 | `SettingsActivity` | `AppCompatActivity` that hosts `SettingsFragment` |
 | `SettingsFragment` | `PreferenceFragmentCompat`; renders profile picker, master toggle, and volume slider |
