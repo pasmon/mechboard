@@ -6,7 +6,7 @@ A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound ef
 
 ## Features
 
-- 🎹 **Six sound profiles**
+- 🎹 **Nine sound profiles**
   | Profile | Switch type |
   |---|---|
   | Cherry MX Blue | Clicky |
@@ -14,6 +14,9 @@ A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound ef
   | Cherry MX Brown | Tactile |
   | Topre | Thocky |
   | Alps | Vintage |
+  | NK Cream | Smooth Linear |
+  | Holy Panda | Tactile Thock |
+  | Typewriter | Classic typewriter |
   | Silent | No sound |
 - 🔊 **Master on/off toggle** — silence all sounds instantly
 - 🔉 **Volume slider** (0 – 100 %) independent of system volume
@@ -62,7 +65,7 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | Setting | Description | Default |
 |---|---|---|
 | Key sounds | Master on/off toggle for all sound effects | On |
-| Sound profile | Choose one of the six profiles listed above | Cherry MX Blue |
+| Sound profile | Choose one of the nine profiles listed above | Cherry MX Blue |
 | Volume | Key-click volume independent of system volume (0 – 100) | 80 |
 
 ---
@@ -72,8 +75,8 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | Class | Role |
 |---|---|
 | `MechboardService` | Main `InputMethodService`; inflates the keyboard view, routes key events, manages caps-lock state, and triggers sound playback |
-| `SoundManager` | Wraps `SoundPool`; loads WAV assets per profile, reads/writes preferences, exposes `playKeySound()` |
-| `SoundProfile` | Enum of the six profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
+| `SoundManager` | Wraps `SoundPool`; loads short sound effects (WAV/MP3) per profile, reads/writes preferences, exposes `playKeySound()` |
+| `SoundProfile` | Enum of the nine profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
 | `SettingsActivity` | `AppCompatActivity` that hosts `SettingsFragment` |
 | `SettingsFragment` | `PreferenceFragmentCompat`; renders profile picker, master toggle, and volume slider |
 | `PrefsKeys` | Plain object of `SharedPreferences` key constants (no Android dependency — keeps unit tests simple) |
@@ -109,4 +112,8 @@ Unit tests live in `app/src/test/` and use **JUnit 4 + Mockito**. They have no d
 
 ## License
 
-This project does not currently include a license file. All rights reserved by the author unless stated otherwise.
+This project is licensed under the [MIT License](LICENSE).
+
+Audio assets bundled with the app come from open-source projects and are used
+in accordance with their respective licenses. See [CREDITS.md](CREDITS.md) for
+a full breakdown of every audio file's origin and license.

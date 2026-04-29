@@ -46,6 +46,21 @@ enum class SoundProfile(
         displayName = "Alps (Vintage)",
         rawFileName = "alps"
     ),
+    NK_CREAM(
+        id = "nk_cream",
+        displayName = "NK Cream (Smooth Linear)",
+        rawFileName = "nk_cream"
+    ),
+    HOLY_PANDA(
+        id = "holy_panda",
+        displayName = "Holy Panda (Tactile Thock)",
+        rawFileName = "holy_panda"
+    ),
+    TYPEWRITER(
+        id = "typewriter",
+        displayName = "Typewriter (Classic)",
+        rawFileName = "typewriter"
+    ),
     SILENT(
         id = "silent",
         displayName = "Silent",
