@@ -96,6 +96,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         // Always reset to the main keyboard when the view is (re)created.
         isSymbolsMode = false
         keyboard = Keyboard(this, currentLayoutResId)
+        keyboard.isShifted = isCapsLock
         // Inflate the wrapper layout (LinearLayout) and look up the KeyboardView
         // inside it. Casting the root to KeyboardView would throw ClassCastException.
         // A ContextThemeWrapper applies the active KeyboardTheme so that all ?attr/
