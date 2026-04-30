@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Single-key popup keyboard used as a template for long-press number popups.
+
+    android.inputmethodservice.KeyboardView uses this XML as a template when a key
+    has android:popupCharacters set. One popup key is created per character in
+    popupCharacters, each inheriting the visual dimensions defined here.
+-->
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:keyWidth="10%p"
+    android:horizontalGap="0px"
+    android:verticalGap="0px"
+    android:keyHeight="@dimen/key_height">
+
+    <Row>
+        <Key android:codes="0" android:keyLabel=""
+             android:keyEdgeFlags="left|right" />
+    </Row>
+
+</Keyboard>
