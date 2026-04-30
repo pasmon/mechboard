@@ -7,38 +7,39 @@ package com.example.mechboard
  * the raw-resource filename (minus extension), plus a human-readable
  * [displayName] shown in the settings UI.
  *
- * Profiles with a non-null [rawFileName] resolve their audio resource at
- * runtime via [android.content.res.Resources.getIdentifier] so that this class
- * has no direct dependency on the generated [R] class and remains testable
- * with plain JVM unit tests.
+ * The corresponding audio resource is resolved at runtime via
+ * [android.content.res.Resources.getIdentifier] so that this class has no
+ * direct dependency on the generated [R] class and remains testable with
+ * plain JVM unit tests.
  *
- * Profiles whose [rawFileName] is `null` intentionally produce no sound.
+ * [SILENT] is a special profile that produces no sound; its [rawFileName] is
+ * `null`.
  */
 enum class SoundProfile(
     val id: String,
     val displayName: String,
-    /** Raw-resource filename (no extension) used to load the audio asset, or null for a silent profile. */
+    /** Raw-resource filename (no extension) used to load the audio asset, or null for [SILENT]. */
     val rawFileName: String?
 ) {
     CHERRY_MX_BLUE(
         id = "cherry_blue",
         displayName = "Cherry MX Blue (Clicky)",
-        rawFileName = null
+        rawFileName = "cherry_blue"
     ),
     CHERRY_MX_RED(
         id = "cherry_red",
         displayName = "Cherry MX Red (Linear)",
-        rawFileName = null
+        rawFileName = "cherry_red"
     ),
     CHERRY_MX_BROWN(
         id = "cherry_brown",
         displayName = "Cherry MX Brown (Tactile)",
-        rawFileName = null
+        rawFileName = "cherry_brown"
     ),
     TOPRE(
         id = "topre",
         displayName = "Topre (Thocky)",
-        rawFileName = null
+        rawFileName = "topre"
     ),
     ALPS(
         id = "alps",

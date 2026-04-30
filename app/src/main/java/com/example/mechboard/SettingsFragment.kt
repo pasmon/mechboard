@@ -7,7 +7,7 @@ import androidx.preference.PreferenceFragmentCompat
 /**
  * Preference fragment that lets the user choose between:
  *  - Keyboard language (English, Finnish, German, French, Spanish)
- *  - Sound profile (only Alps, NK Cream, Holy Panda, and Typewriter currently play audio)
+ *  - Sound profile (Cherry MX Blue / Red / Brown, Topre, Alps, NK Cream, Holy Panda, Typewriter, Silent)
  *  - Master sound toggle
  *  - Volume level (0–100)
  *

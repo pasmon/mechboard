@@ -24,34 +24,25 @@ class SoundProfileTest {
     }
 
     @Test
-    fun `expected silent profiles have null rawFileName`() {
-        val expectedSilentProfiles = setOf(
-            SoundProfile.CHERRY_MX_BLUE,
-            SoundProfile.CHERRY_MX_RED,
-            SoundProfile.CHERRY_MX_BROWN,
-            SoundProfile.TOPRE,
-            SoundProfile.SILENT
-        )
-
-        SoundProfile.values().forEach { profile ->
-            if (profile in expectedSilentProfiles) {
-                assertNull(
-                    "${profile.name} should have a null rawFileName",
-                    profile.rawFileName
-                )
-            } else {
+    fun `only SILENT has null rawFileName`() {
+        SoundProfile.values()
+            .filter { it != SoundProfile.SILENT }
+            .forEach { profile ->
                 assertNotNull(
                     "${profile.name} should have a non-null rawFileName",
                     profile.rawFileName
                 )
             }
-        }
+        assertNull(
+            "SILENT should have a null rawFileName",
+            SoundProfile.SILENT.rawFileName
+        )
     }
 
     @Test
-    fun `profiles with audio have non-blank rawFileNames`() {
+    fun `non-SILENT rawFileNames are non-blank`() {
         SoundProfile.values()
-            .filter { it.rawFileName != null }
+            .filter { it != SoundProfile.SILENT }
             .forEach { profile ->
                 assert(!profile.rawFileName.isNullOrBlank()) {
                     "${profile.name} rawFileName is blank"
@@ -94,9 +85,9 @@ class SoundProfileTest {
     }
 
     @Test
-    fun `rawFileName matches profile id for profiles with audio`() {
+    fun `rawFileName matches profile id for non-SILENT profiles`() {
         SoundProfile.values()
-            .filter { it.rawFileName != null }
+            .filter { it != SoundProfile.SILENT }
             .forEach { profile ->
                 assertEquals(
                     "rawFileName should equal id for ${profile.name}",
@@ -104,22 +95,6 @@ class SoundProfileTest {
                     profile.rawFileName
                 )
             }
-    }
-
-    @Test
-    fun `only Alps NK Cream Holy Panda and Typewriter produce sound`() {
-        val expectedAudioProfiles = setOf(
-            SoundProfile.ALPS,
-            SoundProfile.NK_CREAM,
-            SoundProfile.HOLY_PANDA,
-            SoundProfile.TYPEWRITER
-        )
-
-        val actualAudioProfiles = SoundProfile.values()
-            .filter { it.rawFileName != null }
-            .toSet()
-
-        assertEquals(expectedAudioProfiles, actualAudioProfiles)
     }
 
     @Test
