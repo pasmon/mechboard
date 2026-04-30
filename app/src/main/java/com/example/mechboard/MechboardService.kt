@@ -25,7 +25,7 @@ import android.view.inputmethod.EditorInfo
  */
 class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionListener {
 
-    private lateinit var keyboardView: KeyboardView
+    private lateinit var keyboardView: MechboardKeyboardView
     /**
      * Keyboard definition reloaded whenever the layout changes.
      */
