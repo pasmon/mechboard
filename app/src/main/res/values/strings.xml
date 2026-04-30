@@ -11,6 +11,9 @@
     <string name="pref_volume_summary">Key-click volume (0 – 100)</string>
     <string name="pref_keyboard_layout_title">Keyboard language</string>
 
+    <!-- Keyboard key labels -->
+    <string name="key_label_symbols">\?123</string>
+
     <!-- Keyboard theme -->
     <string name="pref_keyboard_theme_title">Keyboard theme</string>
 </resources>

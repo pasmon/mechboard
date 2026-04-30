@@ -34,8 +34,12 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     private lateinit var prefs: SharedPreferences
 
     private var isCapsLock = false
-    /** Resource id of the currently active keyboard XML definition. */
+    /** Resource id of the currently active main keyboard XML definition. */
     private var currentLayoutResId = 0
+    /** Resource id of the universal symbols keyboard. Resolved once in [onCreate]. */
+    private var symbolsResId = 0
+    /** Whether the symbols/numbers keyboard is currently displayed. */
+    private var isSymbolsMode = false
 
     /**
      * Ordered list of all supported layouts built from [KeyboardLayout] entries.
@@ -76,12 +80,16 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
             prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
                 ?: KeyboardLayout.ENGLISH.id
         )
+        symbolsResId = resources.getIdentifier("keyboard_symbols", "xml", packageName)
         keyboard = Keyboard(this, currentLayoutResId)
         soundManager = SoundManager(this, prefs)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
     }
 
     override fun onCreateInputView(): View {
+        // Always reset to the main keyboard when the view is (re)created.
+        isSymbolsMode = false
+        keyboard = Keyboard(this, currentLayoutResId)
         // Inflate the wrapper layout (LinearLayout) and look up the KeyboardView
         // inside it. Casting the root to KeyboardView would throw ClassCastException.
         // A ContextThemeWrapper applies the active KeyboardTheme so that all ?attr/
@@ -133,6 +141,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
             }
             KEYCODE_SPACE           -> ic.commitText(" ", 1)
             KEYCODE_SETTINGS        -> openSettings()
+            KEYCODE_SYMBOLS         -> toggleSymbolsMode()
             else -> {
                 val ch = primaryCode.toChar()
                 ic.commitText(
@@ -172,7 +181,8 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         val layoutId = prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
             ?: KeyboardLayout.ENGLISH.id
         val newResId = layoutResIdFromId(layoutId)
-        if (newResId == currentLayoutResId) return
+        if (newResId == currentLayoutResId && !isSymbolsMode) return
+        isSymbolsMode = false
         currentLayoutResId = newResId
         isCapsLock = false
         keyboard = Keyboard(this, currentLayoutResId)
@@ -205,6 +215,21 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         startActivity(intent)
     }
 
+    /**
+     * Toggles between the main keyboard and the symbols/numbers keyboard.
+     * Called when the user presses "?123" (main keyboard) or "ABC" (symbols keyboard).
+     */
+    private fun toggleSymbolsMode() {
+        isSymbolsMode = !isSymbolsMode
+        val resId = if (isSymbolsMode) symbolsResId else currentLayoutResId
+        isCapsLock = false
+        keyboard = Keyboard(this, resId)
+        if (::keyboardView.isInitialized) {
+            keyboardView.keyboard = keyboard
+            keyboardView.invalidateAllKeys()
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Constants
     // -------------------------------------------------------------------------
@@ -217,5 +242,8 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
         /** Key code for the dedicated settings key (negative = custom). */
         const val KEYCODE_SETTINGS = -101
+
+        /** Key code for the symbols/numbers keyboard toggle ("?123" / "ABC"). */
+        const val KEYCODE_SYMBOLS = -102
     }
 }
