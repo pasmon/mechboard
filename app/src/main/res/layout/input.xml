@@ -10,7 +10,7 @@
     android:layout_height="wrap_content"
     android:background="?attr/keyboardBgColor">
 
-    <android.inputmethodservice.KeyboardView
+    <com.example.mechboard.MechboardKeyboardView
         android:id="@+id/keyboard_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
