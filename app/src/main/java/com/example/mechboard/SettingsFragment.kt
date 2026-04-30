@@ -7,7 +7,7 @@ import androidx.preference.PreferenceFragmentCompat
 /**
  * Preference fragment that lets the user choose between:
  *  - Keyboard language (English, Finnish, German, French, Spanish)
- *  - Sound profile (Cherry MX Blue / Red / Brown, Topre, Alps, Silent)
+ *  - Sound profile
  *  - Master sound toggle
  *  - Volume level (0–100)
  *
