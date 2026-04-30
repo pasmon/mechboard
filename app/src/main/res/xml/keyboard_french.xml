@@ -4,7 +4,7 @@
 
     Differences from English QWERTY:
       - Row 2: a s d f g h j k l é ç  (11 keys @ 9 %p, no leading gap)
-      - Row 4: ⚙ ,  [space]  à  è  ù  .  🌐  ↵
+      - Row 4: ⚙ ,  [space]  à  è  ù  .  ↵
 -->
 <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
     android:keyWidth="10%p"
@@ -60,17 +60,16 @@
              android:isRepeatable="true" />
     </Row>
 
-    <!-- Row 4: Settings, comma, Space, à, è, ù, period, lang-switch, Enter -->
+    <!-- Row 4: Settings, comma, Space, à, è, ù, period, Enter -->
     <Row android:rowEdgeFlags="bottom">
         <Key android:codes="-101" android:keyLabel="⚙"
              android:keyWidth="10%p" android:keyEdgeFlags="left" />
         <Key android:codes="44"   android:keyLabel=","   android:keyWidth="10%p" />
-        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="30%p" />
+        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="40%p" />
         <Key android:codes="224"  android:keyLabel="à"   android:keyWidth="10%p" />
         <Key android:codes="232"  android:keyLabel="è"   android:keyWidth="10%p" />
         <Key android:codes="249"  android:keyLabel="ù"   android:keyWidth="10%p" />
         <Key android:codes="46"   android:keyLabel="."   android:keyWidth="10%p" />
-        <Key android:codes="-102" android:keyLabel="🌐"  android:keyWidth="10%p" />
         <Key android:codes="-4"   android:keyLabel="↵"
              android:keyWidth="10%p" android:keyEdgeFlags="right" />
     </Row>

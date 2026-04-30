@@ -37,7 +37,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
     /**
      * Ordered list of all supported layouts built from [KeyboardLayout] entries.
-     * The language-switch key cycles through them in sequence.
+     * Used to resolve the layout selected via [SettingsActivity].
      * Initialised in [onCreate] where [android.content.res.Resources] is available.
      */
     private lateinit var layoutCycle: List<Pair<KeyboardLayout, Int>>
@@ -121,7 +121,6 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
             }
             KEYCODE_SPACE           -> ic.commitText(" ", 1)
             KEYCODE_SETTINGS        -> openSettings()
-            KEYCODE_LANG_SWITCH     -> switchLanguage()
             else -> {
                 val ch = primaryCode.toChar()
                 ic.commitText(
@@ -151,20 +150,6 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         isCapsLock = !isCapsLock
         keyboard.isShifted = isCapsLock
         keyboardView.invalidateAllKeys()
-    }
-
-    private fun switchLanguage() {
-        val currentIndex = layoutCycle.indexOfFirst { it.second == currentLayoutResId }
-        val nextIndex = (currentIndex + 1) % layoutCycle.size
-        val (nextLayout, nextResId) = layoutCycle[nextIndex]
-        currentLayoutResId = nextResId
-        isCapsLock = false
-        keyboard = Keyboard(this, currentLayoutResId)
-        keyboardView.keyboard = keyboard
-        keyboardView.invalidateAllKeys()
-        prefs.edit()
-            .putString(PrefsKeys.KEYBOARD_LAYOUT, nextLayout.id)
-            .apply()
     }
 
     /**
@@ -207,8 +192,5 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
         /** Key code for the dedicated settings key (negative = custom). */
         const val KEYCODE_SETTINGS = -101
-
-        /** Key code for the language-switch key (negative = custom). */
-        const val KEYCODE_LANG_SWITCH = -102
     }
 }

@@ -4,7 +4,7 @@
 
     Differences from English QWERTY:
       - Row 2: a s d f g h j k l ñ  (10 keys @ 10 %p, no leading gap)
-      - Row 4: ⚙ ,  [space]  ¿  ¡  .  🌐  ↵
+      - Row 4: ⚙ ,  [space]  ¿  ¡  .  ↵
 -->
 <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
     android:keyWidth="10%p"
@@ -57,16 +57,15 @@
              android:isRepeatable="true" />
     </Row>
 
-    <!-- Row 4: Settings, comma, Space, ¿, ¡, period, lang-switch, Enter -->
+    <!-- Row 4: Settings, comma, Space, ¿, ¡, period, Enter -->
     <Row android:rowEdgeFlags="bottom">
         <Key android:codes="-101" android:keyLabel="⚙"
              android:keyWidth="10%p" android:keyEdgeFlags="left" />
         <Key android:codes="44"   android:keyLabel=","   android:keyWidth="10%p" />
-        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="30%p" />
+        <Key android:codes="32"   android:keyLabel="Space" android:keyWidth="40%p" />
         <Key android:codes="191"  android:keyLabel="¿"   android:keyWidth="10%p" />
         <Key android:codes="161"  android:keyLabel="¡"   android:keyWidth="10%p" />
         <Key android:codes="46"   android:keyLabel="."   android:keyWidth="10%p" />
-        <Key android:codes="-102" android:keyLabel="🌐"  android:keyWidth="10%p" />
         <Key android:codes="-4"   android:keyLabel="↵"
              android:keyWidth="10%p" android:keyEdgeFlags="right" />
     </Row>
