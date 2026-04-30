@@ -8,15 +8,15 @@ This file documents the origin and license of every audio asset bundled with Mec
 
 The following profiles were re-sourced from the open-source
 [Mechvibes](https://github.com/hainguyents13/mechvibes) project to establish
-clear provenance. A representative key sound (the "A" key) was extracted from
-each profile's audio sprite using ffmpeg.
+clear provenance. Individual per-key press samples were taken directly from
+each profile's asset directory.
 
 | File | Profile | Source project | Upstream file | License |
 |---|---|---|---|---|
 | `cherry_blue.mp3` | Cherry MX Blue (Clicky) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "CherryMX Blue" | `src/audio/mxblue-travel/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
-| `cherry_red.mp3` | Cherry MX Red (Linear) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "CherryMX Black" | `src/audio/mxblack-travel/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
+| `cherry_red.mp3` | Cherry MX Red (Linear) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "CherryMX Red" | `src/audio/mxred-travel/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
 | `cherry_brown.mp3` | Cherry MX Brown (Tactile) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "CherryMX Brown" | `src/audio/mxbrown-travel/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
-| `topre.mp3` | Topre (Thocky) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "Turquoise" | `src/audio/turquoise/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
+| `topre.mp3` | Topre (Thocky) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "Turquoise" (used for local Topre profile) | `src/audio/turquoise/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
 
 ---
 
