@@ -6,14 +6,15 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
 import android.util.AttributeSet
 import android.util.TypedValue
 
 /**
  * A [KeyboardView] subclass that paints a small digit hint in the top-right
- * corner of every key that has a [android.inputmethodservice.Keyboard.Key.popupCharacters]
- * value set (i.e. the top-row keys q–p that produce digits 1–0 on long-press).
+ * corner of every key that has a [Keyboard.Key.popupCharacters] value set
+ * (i.e. the top-row keys q–p that produce digits 1–0 on long-press).
  *
  * The hint colour is derived from the active theme's [R.attr.keyLabelColor] at
  * ~55 % opacity so it reads as a secondary label without competing with the
@@ -37,15 +38,33 @@ class MechboardKeyboardView @JvmOverloads constructor(
         color = resolveHintColor(context)
     }
 
+    /**
+     * Baseline offset that places the glyph top exactly [hintPaddingPx] below the key top.
+     * `fontMetrics.top` is negative (distance from baseline to top of tallest glyph),
+     * so subtracting it converts a key-top position into the required baseline position.
+     */
+    private val hintBaselineOffsetPx = hintPaddingPx - hintPaint.fontMetrics.top
+
+    /**
+     * Per-key cached char arrays keyed by the hint character.  Populated lazily the first
+     * time [onDraw] encounters a given character, then reused on every subsequent frame to
+     * avoid per-draw allocations.
+     */
+    private val hintCharCache = HashMap<Char, CharArray>()
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val kb = keyboard ?: return
-        for (key in kb.keys) {
+        val keys = kb.keys
+        for (i in keys.indices) {
+            val key = keys[i]
             val hint = key.popupCharacters
             if (!hint.isNullOrEmpty()) {
+                val ch = hint[0]
+                val chars = hintCharCache.getOrPut(ch) { charArrayOf(ch) }
                 val hintX = key.x + key.width - hintPaddingPx
-                val hintY = key.y + hintPaint.textSize + hintPaddingPx
-                canvas.drawText(hint[0].toString(), hintX, hintY, hintPaint)
+                val hintY = key.y + hintBaselineOffsetPx
+                canvas.drawText(chars, 0, 1, hintX, hintY, hintPaint)
             }
         }
     }
