@@ -16,7 +16,7 @@ import android.util.TypedValue
  * value set (i.e. the top-row keys q–p that produce digits 1–0 on long-press).
  *
  * The hint colour is derived from the active theme's [R.attr.keyLabelColor] at
- * 55 % opacity so it reads as a secondary label without competing with the
+ * ~55 % opacity so it reads as a secondary label without competing with the
  * primary key label.
  */
 class MechboardKeyboardView @JvmOverloads constructor(
@@ -24,6 +24,10 @@ class MechboardKeyboardView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : KeyboardView(context, attrs, defStyleAttr) {
+
+    private val hintPaddingPx = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP, HINT_PADDING_DP, context.resources.displayMetrics
+    )
 
     private val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.RIGHT
@@ -39,8 +43,8 @@ class MechboardKeyboardView @JvmOverloads constructor(
         for (key in kb.keys) {
             val hint = key.popupCharacters
             if (!hint.isNullOrEmpty()) {
-                val hintX = (key.x + key.width - HINT_PADDING_PX).toFloat()
-                val hintY = (key.y + hintPaint.textSize + HINT_PADDING_PX).toFloat()
+                val hintX = key.x + key.width - hintPaddingPx
+                val hintY = key.y + hintPaint.textSize + hintPaddingPx
                 canvas.drawText(hint[0].toString(), hintX, hintY, hintPaint)
             }
         }
@@ -48,11 +52,11 @@ class MechboardKeyboardView @JvmOverloads constructor(
 
     companion object {
         private const val HINT_TEXT_SIZE_SP = 9f
-        private const val HINT_PADDING_PX = 6
+        private const val HINT_PADDING_DP = 4f
 
         /**
          * Resolves [R.attr.keyLabelColor] from the context's theme and returns it
-         * at [HINT_ALPHA] opacity.  Falls back to white if the attribute is absent.
+         * at [HINT_ALPHA] opacity (~55 %).  Falls back to white if the attribute is absent.
          */
         private fun resolveHintColor(context: Context): Int {
             val typedValue = TypedValue()
@@ -66,7 +70,7 @@ class MechboardKeyboardView @JvmOverloads constructor(
             )
         }
 
-        /** 55 % opacity (0–255 scale). */
+        /** ~55 % opacity (140 / 255 ≈ 0.549). */
         private const val HINT_ALPHA = 140
     }
 }
