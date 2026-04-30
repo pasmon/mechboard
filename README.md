@@ -1,5 +1,11 @@
 # Mechboard
 
+[![CI](https://github.com/pasmon/mechboard/actions/workflows/ci.yml/badge.svg)](https://github.com/pasmon/mechboard/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/pasmon/mechboard?include_prereleases)](https://github.com/pasmon/mechboard/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Min SDK](https://img.shields.io/badge/Android-API%2021%2B-brightgreen?logo=android)](https://developer.android.com/about/versions/lollipop)
+[![Language: Kotlin](https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+
 A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound effects**. Pick from six sound profiles, toggle sounds on/off, and fine-tune the volume — all from a built-in settings screen.
 
 ---
