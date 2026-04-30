@@ -6,7 +6,7 @@ A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound ef
 
 ## Features
 
-- 🎹 **Nine sound profiles**
+- 🎹 **Nine selectable profiles**
   | Profile | Switch type |
   |---|---|
   | Cherry MX Blue | Clicky |
@@ -18,6 +18,7 @@ A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound ef
   | Holy Panda | Tactile Thock |
   | Typewriter | Classic typewriter |
   | Silent | No sound |
+- 🔇 **Only Alps, NK Cream, Holy Panda, and Typewriter currently play audio** — the remaining profiles are silent
 - 🔊 **Master on/off toggle** — silence all sounds instantly
 - 🔉 **Volume slider** (0 – 100 %) independent of system volume
 - ⚙️ **In-keyboard settings key** — opens the settings screen without leaving the current app
@@ -75,8 +76,8 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | Class | Role |
 |---|---|
 | `MechboardService` | Main `InputMethodService`; inflates the keyboard view, routes key events, manages caps-lock state, and triggers sound playback |
-| `SoundManager` | Wraps `SoundPool`; loads short sound effects (WAV/MP3) per profile, reads/writes preferences, exposes `playKeySound()` |
-| `SoundProfile` | Enum of the nine profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
+| `SoundManager` | Wraps `SoundPool`; loads the available short sound effects (WAV/MP3), reads/writes preferences, exposes `playKeySound()` |
+| `SoundProfile` | Enum of the nine profiles; each carries an `id`, `displayName`, and optional `rawFileName` for profiles that actually play audio |
 | `SettingsActivity` | `AppCompatActivity` that hosts `SettingsFragment` |
 | `SettingsFragment` | `PreferenceFragmentCompat`; renders profile picker, master toggle, and volume slider |
 | `PrefsKeys` | Plain object of `SharedPreferences` key constants (no Android dependency — keeps unit tests simple) |

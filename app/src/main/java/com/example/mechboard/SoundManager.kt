@@ -69,11 +69,11 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
     // Public API
     // -------------------------------------------------------------------------
 
-    /** Plays the currently selected key-click sound (no-op when silent, muted, or sample unavailable). */
+    /** Plays the currently selected key-click sound (no-op when muted, silent, or sample unavailable). */
     fun playKeySound() {
         if (!isSoundEnabled) return
         val profile = currentProfile
-        if (profile == SoundProfile.SILENT) return
+        if (profile.rawFileName == null) return
         // A sample ID of 0 means the load failed; skip it silently.
         val sampleId = sampleIds[profile]?.takeIf { it > 0 } ?: return
         val vol = volume
