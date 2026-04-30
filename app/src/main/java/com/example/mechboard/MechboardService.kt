@@ -33,7 +33,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     private lateinit var soundManager: SoundManager
     private lateinit var prefs: SharedPreferences
 
-    private var isCapsLock = false
+    private var isShifted = false
     /** Resource id of the currently active main keyboard XML definition. */
     private var currentLayoutResId = 0
     /** Resource id of the universal symbols keyboard. Resolved once in [onCreate]. */
@@ -96,7 +96,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         // Always reset to the main keyboard when the view is (re)created.
         isSymbolsMode = false
         keyboard = Keyboard(this, currentLayoutResId)
-        keyboard.isShifted = isCapsLock
+        keyboard.isShifted = isShifted
         // Inflate the wrapper layout (LinearLayout) and look up the KeyboardView
         // inside it. Casting the root to KeyboardView would throw ClassCastException.
         // A ContextThemeWrapper applies the active KeyboardTheme so that all ?attr/
@@ -152,9 +152,14 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
             else -> {
                 val ch = primaryCode.toChar()
                 ic.commitText(
-                    if (isCapsLock) ch.uppercaseChar().toString() else ch.toString(),
+                    if (isShifted) ch.uppercaseChar().toString() else ch.toString(),
                     1
                 )
+                if (isShifted) {
+                    isShifted = false
+                    keyboard.isShifted = false
+                    keyboardView.invalidateAllKeys()
+                }
             }
         }
     }
@@ -175,8 +180,8 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     // -------------------------------------------------------------------------
 
     private fun handleShift() {
-        isCapsLock = !isCapsLock
-        keyboard.isShifted = isCapsLock
+        isShifted = !isShifted
+        keyboard.isShifted = isShifted
         keyboardView.invalidateAllKeys()
     }
 
@@ -191,7 +196,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         if (newResId == currentLayoutResId && !isSymbolsMode) return
         isSymbolsMode = false
         currentLayoutResId = newResId
-        isCapsLock = false
+        isShifted = false
         keyboard = Keyboard(this, currentLayoutResId)
         if (::keyboardView.isInitialized) {
             keyboardView.keyboard = keyboard
@@ -229,7 +234,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     private fun toggleSymbolsMode() {
         isSymbolsMode = !isSymbolsMode
         val resId = if (isSymbolsMode) symbolsResId else currentLayoutResId
-        isCapsLock = false
+        isShifted = false
         keyboard = Keyboard(this, resId)
         if (::keyboardView.isInitialized) {
             keyboardView.keyboard = keyboard
