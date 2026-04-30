@@ -12,4 +12,5 @@ object PrefsKeys {
     const val SOUND_ENABLED   = "sound_enabled"
     const val VOLUME          = "volume"
     const val KEYBOARD_LAYOUT = "keyboard_layout"
+    const val KEYBOARD_THEME  = "keyboard_theme"
 }
