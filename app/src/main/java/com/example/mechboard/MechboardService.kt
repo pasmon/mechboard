@@ -145,8 +145,12 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
                 } else {
                     ic.commitText("\n", 1)
                 }
+                clearShift()
             }
-            KEYCODE_SPACE           -> ic.commitText(" ", 1)
+            KEYCODE_SPACE           -> {
+                ic.commitText(" ", 1)
+                clearShift()
+            }
             KEYCODE_SETTINGS        -> openSettings()
             KEYCODE_SYMBOLS         -> toggleSymbolsMode()
             else -> {
@@ -155,11 +159,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
                     if (isShifted) ch.uppercaseChar().toString() else ch.toString(),
                     1
                 )
-                if (isShifted) {
-                    isShifted = false
-                    keyboard.isShifted = false
-                    keyboardView.invalidateAllKeys()
-                }
+                clearShift()
             }
         }
     }
@@ -183,6 +183,15 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         isShifted = !isShifted
         keyboard.isShifted = isShifted
         keyboardView.invalidateAllKeys()
+    }
+
+    /** Clears shift state and refreshes the keyboard if shift was active. */
+    private fun clearShift() {
+        if (isShifted) {
+            isShifted = false
+            keyboard.isShifted = false
+            keyboardView.invalidateAllKeys()
+        }
     }
 
     /**
