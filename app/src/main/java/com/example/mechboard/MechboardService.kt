@@ -81,6 +81,12 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
                 ?: KeyboardLayout.ENGLISH.id
         )
         symbolsResId = resources.getIdentifier("keyboard_symbols", "xml", packageName)
+        if (symbolsResId == 0) {
+            throw IllegalStateException(
+                "keyboard_symbols XML resource not found. " +
+                    "Ensure keyboard_symbols.xml exists under res/xml."
+            )
+        }
         keyboard = Keyboard(this, currentLayoutResId)
         soundManager = SoundManager(this, prefs)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
