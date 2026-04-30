@@ -24,6 +24,13 @@
         android:defaultValue="english"
         app:useSimpleSummaryProvider="true" />
 
+    <!-- Keyboard theme chooser -->
+    <ListPreference
+        android:key="keyboard_theme"
+        android:title="@string/pref_keyboard_theme_title"
+        android:defaultValue="dark"
+        app:useSimpleSummaryProvider="true" />
+
     <!-- Volume (0–100) -->
     <SeekBarPreference
         android:key="volume"

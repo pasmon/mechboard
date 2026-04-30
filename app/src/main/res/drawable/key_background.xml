@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     State-list drawable for individual keys.
-    Pressed state uses the accent colour; normal state uses keyBackground.
+    Pressed state uses the theme's accent colour; normal state uses the theme's
+    key background colour.  Both colours are supplied via custom theme attributes
+    (?attr/keyPressedColor and ?attr/keyBgColor) so that the active KeyboardTheme
+    is applied through ContextThemeWrapper at inflation time.
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/colorAccent" />
+            <solid android:color="?attr/keyPressedColor" />
             <corners android:radius="4dp" />
             <stroke android:width="1dp" android:color="#44FFFFFF" />
         </shape>
@@ -15,7 +18,7 @@
 
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/keyBackground" />
+            <solid android:color="?attr/keyBgColor" />
             <corners android:radius="4dp" />
             <stroke android:width="1dp" android:color="#22FFFFFF" />
         </shape>

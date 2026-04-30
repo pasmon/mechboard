@@ -5,4 +5,59 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
+
+    <!--
+        Keyboard colour themes.
+        Each style defines the four ?attr/ values consumed by res/layout/input.xml
+        and res/drawable/key_background.xml. They are applied at inflation time via
+        ContextThemeWrapper in MechboardService.onCreateInputView().
+    -->
+
+    <!-- Dark — default dark theme (original Mechboard palette) -->
+    <style name="Theme.Mechboard.Keyboard.Dark" parent="Theme.Mechboard">
+        <item name="keyboardBgColor">#1B1B2F</item>
+        <item name="keyBgColor">#2D2D44</item>
+        <item name="keyPressedColor">#E94560</item>
+        <item name="keyLabelColor">#FFFFFF</item>
+    </style>
+
+    <!-- Solarized Dark — Ethan Schoonover's low-contrast dark palette -->
+    <style name="Theme.Mechboard.Keyboard.SolarizedDark" parent="Theme.Mechboard">
+        <item name="keyboardBgColor">#002B36</item>
+        <item name="keyBgColor">#073642</item>
+        <item name="keyPressedColor">#268BD2</item>
+        <item name="keyLabelColor">#839496</item>
+    </style>
+
+    <!-- Solarized Light — Ethan Schoonover's low-contrast light palette -->
+    <style name="Theme.Mechboard.Keyboard.SolarizedLight" parent="Theme.Mechboard">
+        <item name="keyboardBgColor">#FDF6E3</item>
+        <item name="keyBgColor">#EEE8D5</item>
+        <item name="keyPressedColor">#268BD2</item>
+        <item name="keyLabelColor">#657B83</item>
+    </style>
+
+    <!-- Dracula — purple-tinted dark theme by Zeno Rocha -->
+    <style name="Theme.Mechboard.Keyboard.Dracula" parent="Theme.Mechboard">
+        <item name="keyboardBgColor">#282A36</item>
+        <item name="keyBgColor">#44475A</item>
+        <item name="keyPressedColor">#BD93F9</item>
+        <item name="keyLabelColor">#F8F8F2</item>
+    </style>
+
+    <!-- Nord — arctic blue-grey palette by Arctic Ice Studio -->
+    <style name="Theme.Mechboard.Keyboard.Nord" parent="Theme.Mechboard">
+        <item name="keyboardBgColor">#2E3440</item>
+        <item name="keyBgColor">#3B4252</item>
+        <item name="keyPressedColor">#88C0D0</item>
+        <item name="keyLabelColor">#ECEFF4</item>
+    </style>
+
+    <!-- Monokai — classic editor theme by Wimer Hazenberg -->
+    <style name="Theme.Mechboard.Keyboard.Monokai" parent="Theme.Mechboard">
+        <item name="keyboardBgColor">#272822</item>
+        <item name="keyBgColor">#3E3D32</item>
+        <item name="keyPressedColor">#A6E22E</item>
+        <item name="keyLabelColor">#F8F8F2</item>
+    </style>
 </resources>

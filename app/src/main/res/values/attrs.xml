@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Custom theme attributes used to style the keyboard view.
+    Referenced via ?attr/ in layout and drawable files so that the active
+    KeyboardTheme can be applied through ContextThemeWrapper at inflation time.
+-->
+<resources>
+    <!-- Background colour for the full keyboard panel. -->
+    <attr name="keyboardBgColor" format="color" />
+    <!-- Normal (unpressed) key face colour. -->
+    <attr name="keyBgColor" format="color" />
+    <!-- Key face colour while the key is held down. -->
+    <attr name="keyPressedColor" format="color" />
+    <!-- Text / label colour for every key. -->
+    <attr name="keyLabelColor" format="color" />
+</resources>

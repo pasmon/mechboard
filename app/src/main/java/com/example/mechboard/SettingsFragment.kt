@@ -10,10 +10,11 @@ import androidx.preference.PreferenceFragmentCompat
  *  - Sound profile
  *  - Master sound toggle
  *  - Volume level (0–100)
+ *  - Keyboard theme (Dark, Solarized Dark, Solarized Light, Dracula, Nord, Monokai)
  *
- * Entries for both [ListPreference] widgets are derived at runtime from their
- * respective enums ([KeyboardLayout] and [SoundProfile]) so that the XML and
- * the enums stay in sync automatically.
+ * Entries for all [ListPreference] widgets are derived at runtime from their
+ * respective enums ([KeyboardLayout], [SoundProfile], and [KeyboardTheme]) so
+ * that the XML and the enums stay in sync automatically.
  */
 class SettingsFragment : PreferenceFragmentCompat() {
 
@@ -22,6 +23,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(R.xml.preferences, rootKey)
         bindKeyboardLayoutEntries()
         bindSoundProfileEntries()
+        bindKeyboardThemeEntries()
     }
 
     private fun bindKeyboardLayoutEntries() {
@@ -37,5 +39,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val profiles = SoundProfile.values()
         pref.entries     = profiles.map { it.displayName }.toTypedArray()
         pref.entryValues = profiles.map { it.id }.toTypedArray()
+    }
+
+    private fun bindKeyboardThemeEntries() {
+        val pref = findPreference<ListPreference>(PrefsKeys.KEYBOARD_THEME) ?: return
+        val themes = KeyboardTheme.values()
+        pref.entries     = themes.map { it.displayName }.toTypedArray()
+        pref.entryValues = themes.map { it.id }.toTypedArray()
     }
 }

@@ -7,6 +7,8 @@ import android.content.SharedPreferences
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
+import android.view.ContextThemeWrapper
+import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo
 
@@ -43,12 +45,13 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     private lateinit var layoutCycle: List<Pair<KeyboardLayout, Int>>
 
     /**
-     * Listens for changes to [PrefsKeys.KEYBOARD_LAYOUT] made via [SettingsActivity]
-     * and applies the new layout immediately, even while the keyboard is visible.
+     * Listens for changes to [PrefsKeys.KEYBOARD_LAYOUT] or [PrefsKeys.KEYBOARD_THEME] made via
+     * [SettingsActivity] and applies the change immediately, even while the keyboard is visible.
      */
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == PrefsKeys.KEYBOARD_LAYOUT) {
-            applyLayoutFromPrefs()
+        when (key) {
+            PrefsKeys.KEYBOARD_LAYOUT -> applyLayoutFromPrefs()
+            PrefsKeys.KEYBOARD_THEME  -> if (::keyboardView.isInitialized) setInputView(onCreateInputView())
         }
     }
 
@@ -81,7 +84,16 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     override fun onCreateInputView(): View {
         // Inflate the wrapper layout (LinearLayout) and look up the KeyboardView
         // inside it. Casting the root to KeyboardView would throw ClassCastException.
-        val rootView = layoutInflater.inflate(R.layout.input, null)
+        // A ContextThemeWrapper applies the active KeyboardTheme so that all ?attr/
+        // colour references in input.xml and key_background.xml are resolved correctly.
+        val themeStyleResId = styleResIdForTheme(
+            KeyboardTheme.fromId(
+                prefs.getString(PrefsKeys.KEYBOARD_THEME, KeyboardTheme.DARK.id)
+                    ?: KeyboardTheme.DARK.id
+            )
+        )
+        val themedContext = ContextThemeWrapper(this, themeStyleResId)
+        val rootView = LayoutInflater.from(themedContext).inflate(R.layout.input, null)
         keyboardView = rootView.findViewById(R.id.keyboard_view)
         keyboardView.keyboard = keyboard
         keyboardView.setOnKeyboardActionListener(this)
@@ -173,6 +185,19 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     /** Maps a stored layout id (e.g. [KeyboardLayout.ENGLISH.id]) to its XML resource id. */
     private fun layoutResIdFromId(layoutId: String): Int =
         layoutCycle.firstOrNull { it.first.id == layoutId }?.second ?: layoutCycle.first().second
+
+    /**
+     * Returns the Android style resource ID for the given [theme].
+     * Kept in [MechboardService] so that [KeyboardTheme] has no [R] dependency.
+     */
+    private fun styleResIdForTheme(theme: KeyboardTheme): Int = when (theme) {
+        KeyboardTheme.DARK           -> R.style.Theme_Mechboard_Keyboard_Dark
+        KeyboardTheme.SOLARIZED_DARK -> R.style.Theme_Mechboard_Keyboard_SolarizedDark
+        KeyboardTheme.SOLARIZED_LIGHT -> R.style.Theme_Mechboard_Keyboard_SolarizedLight
+        KeyboardTheme.DRACULA        -> R.style.Theme_Mechboard_Keyboard_Dracula
+        KeyboardTheme.NORD           -> R.style.Theme_Mechboard_Keyboard_Nord
+        KeyboardTheme.MONOKAI        -> R.style.Theme_Mechboard_Keyboard_Monokai
+    }
 
     private fun openSettings() {
         val intent = Intent(this, SettingsActivity::class.java)
