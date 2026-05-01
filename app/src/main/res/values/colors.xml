@@ -7,4 +7,42 @@
     <color name="keyTextColor">#FFFFFF</color>
     <color name="keyboardBackground">#1B1B2F</color>
     <color name="ic_launcher_background">#1B1B2F</color>
+
+    <!-- Per-theme palette colours shared between keyboard and settings themes -->
+
+    <!-- Dark -->
+    <color name="theme_dark_bg">#1B1B2F</color>
+    <color name="theme_dark_key">#2D2D44</color>
+    <color name="theme_dark_accent">#E94560</color>
+    <color name="theme_dark_label">#FFFFFF</color>
+
+    <!-- Solarized Dark -->
+    <color name="theme_solarized_dark_bg">#002B36</color>
+    <color name="theme_solarized_dark_key">#073642</color>
+    <color name="theme_solarized_dark_accent">#268BD2</color>
+    <color name="theme_solarized_dark_label">#839496</color>
+
+    <!-- Solarized Light -->
+    <color name="theme_solarized_light_bg">#FDF6E3</color>
+    <color name="theme_solarized_light_key">#EEE8D5</color>
+    <color name="theme_solarized_light_accent">#268BD2</color>
+    <color name="theme_solarized_light_label">#657B83</color>
+
+    <!-- Dracula -->
+    <color name="theme_dracula_bg">#282A36</color>
+    <color name="theme_dracula_key">#44475A</color>
+    <color name="theme_dracula_accent">#BD93F9</color>
+    <color name="theme_dracula_label">#F8F8F2</color>
+
+    <!-- Nord -->
+    <color name="theme_nord_bg">#2E3440</color>
+    <color name="theme_nord_key">#3B4252</color>
+    <color name="theme_nord_accent">#88C0D0</color>
+    <color name="theme_nord_label">#ECEFF4</color>
+
+    <!-- Monokai -->
+    <color name="theme_monokai_bg">#272822</color>
+    <color name="theme_monokai_key">#3E3D32</color>
+    <color name="theme_monokai_accent">#A6E22E</color>
+    <color name="theme_monokai_label">#F8F8F2</color>
 </resources>
