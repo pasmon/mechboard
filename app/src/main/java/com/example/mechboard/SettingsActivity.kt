@@ -16,8 +16,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = getSharedPreferences(MechboardService.PREFS_NAME, Context.MODE_PRIVATE)
-        val themeId = prefs.getString(PrefsKeys.KEYBOARD_THEME, KeyboardTheme.DARK.id)
-            ?: KeyboardTheme.DARK.id
+        val themeId = prefs.getString(PrefsKeys.KEYBOARD_THEME, null) ?: KeyboardTheme.DARK.id
         setTheme(settingsThemeResId(KeyboardTheme.fromId(themeId)))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
