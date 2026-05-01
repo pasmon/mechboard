@@ -31,6 +31,13 @@
         android:defaultValue="dark"
         app:useSimpleSummaryProvider="true" />
 
+    <!-- Keyboard font chooser -->
+    <ListPreference
+        android:key="keyboard_font"
+        android:title="@string/pref_keyboard_font_title"
+        android:defaultValue="default"
+        app:useSimpleSummaryProvider="true" />
+
     <!-- Volume (0–100) -->
     <SeekBarPreference
         android:key="volume"

@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
 import android.util.AttributeSet
@@ -19,12 +20,42 @@ import android.util.TypedValue
  * The hint colour is derived from the active theme's [R.attr.keyLabelColor] at
  * ~55 % opacity so it reads as a secondary label without competing with the
  * primary key label.
+ *
+ * A custom [labelTypeface] can be set to apply a bundled font to both the key
+ * labels (drawn by the parent [KeyboardView]) and the digit hints.  The
+ * typeface is injected into [KeyboardView]'s internal `mPaint` field via
+ * reflection immediately before each [onDraw] call, then restored afterwards,
+ * so that no other logic in the parent class is affected.  If reflection fails
+ * (e.g. due to a future platform change) the view falls back silently to the
+ * system default typeface.
  */
 class MechboardKeyboardView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : KeyboardView(context, attrs, defStyleAttr) {
+
+    /**
+     * The typeface to use for key labels and digit hints.
+     * Set to `null` to use the system default typeface.
+     * Changing this property triggers a full key redraw.
+     */
+    var labelTypeface: Typeface? = null
+        set(value) {
+            field = value
+            hintPaint.typeface = value ?: Typeface.DEFAULT
+            invalidateAllKeys()
+        }
+
+    /**
+     * Lazily resolved reference to [KeyboardView]'s private `mPaint` field.
+     * `null` if the field could not be found or made accessible via reflection.
+     */
+    private val labelPaintField: java.lang.reflect.Field? by lazy {
+        runCatching {
+            KeyboardView::class.java.getDeclaredField("mPaint").also { it.isAccessible = true }
+        }.getOrNull()
+    }
 
     private val hintPaddingPx = TypedValue.applyDimension(
         TypedValue.COMPLEX_UNIT_DIP, HINT_PADDING_DP, context.resources.displayMetrics
@@ -53,7 +84,20 @@ class MechboardKeyboardView @JvmOverloads constructor(
     private val hintCharCache = HashMap<Char, CharArray>()
 
     override fun onDraw(canvas: Canvas) {
+        // Inject the custom typeface into KeyboardView's internal label Paint so that
+        // the parent's key-label drawing respects the user's font preference.
+        val desiredTypeface = labelTypeface ?: Typeface.DEFAULT
+        val labelPaint = labelPaintField?.runCatching { get(this@MechboardKeyboardView as KeyboardView) as? Paint }
+            ?.getOrNull()
+        val previousTypeface = labelPaint?.typeface
+        labelPaint?.typeface = desiredTypeface
+
         super.onDraw(canvas)
+
+        // Restore the original typeface so that the parent view's state is unchanged
+        // between draws (relevant if the view is recycled without a new font being set).
+        labelPaint?.typeface = previousTypeface
+
         val kb = keyboard ?: return
         val keys = kb.keys
         for (i in keys.indices) {
