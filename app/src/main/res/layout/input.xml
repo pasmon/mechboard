@@ -17,6 +17,7 @@
         android:keyBackground="@drawable/key_background"
         android:keyTextColor="?attr/keyLabelColor"
         android:keyTextSize="18sp"
+        android:labelTextSize="14sp"
         android:background="?attr/keyboardBgColor"
         android:paddingTop="4dp"
         android:paddingBottom="4dp" />
