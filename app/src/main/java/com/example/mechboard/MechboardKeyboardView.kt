@@ -48,12 +48,15 @@ class MechboardKeyboardView @JvmOverloads constructor(
         }
 
     /**
-     * Lazily resolved reference to [KeyboardView]'s private `mPaint` field.
-     * `null` if the field could not be found or made accessible via reflection.
+     * Cached reference to [KeyboardView]'s internal label [Paint], resolved once
+     * via reflection and reused on every subsequent [onDraw] call.
+     * `null` if the field could not be found or the initial reflective read failed.
      */
-    private val labelPaintField: java.lang.reflect.Field? by lazy {
+    private val labelPaint: Paint? by lazy {
         runCatching {
-            KeyboardView::class.java.getDeclaredField("mPaint").also { it.isAccessible = true }
+            KeyboardView::class.java.getDeclaredField("mPaint")
+                .also { it.isAccessible = true }
+                .get(this) as? Paint
         }.getOrNull()
     }
 
@@ -84,19 +87,21 @@ class MechboardKeyboardView @JvmOverloads constructor(
     private val hintCharCache = HashMap<Char, CharArray>()
 
     override fun onDraw(canvas: Canvas) {
-        // Inject the custom typeface into KeyboardView's internal label Paint so that
-        // the parent's key-label drawing respects the user's font preference.
-        val desiredTypeface = labelTypeface ?: Typeface.DEFAULT
-        val labelPaint = labelPaintField?.runCatching { get(this@MechboardKeyboardView as KeyboardView) as? Paint }
-            ?.getOrNull()
-        val previousTypeface = labelPaint?.typeface
-        labelPaint?.typeface = desiredTypeface
+        // Only mutate the label Paint when a custom typeface is actually set;
+        // this avoids all per-frame overhead for the common default case.
+        val currentTypeface = labelTypeface
+        var previousTypeface: Typeface? = null
+        if (currentTypeface != null) {
+            previousTypeface = labelPaint?.typeface
+            labelPaint?.typeface = currentTypeface
+        }
 
         super.onDraw(canvas)
 
-        // Restore the original typeface so that the parent view's state is unchanged
-        // between draws (relevant if the view is recycled without a new font being set).
-        labelPaint?.typeface = previousTypeface
+        // Restore so the parent view's state is unchanged between draws.
+        if (currentTypeface != null) {
+            labelPaint?.typeface = previousTypeface
+        }
 
         val kb = keyboard ?: return
         val keys = kb.keys
