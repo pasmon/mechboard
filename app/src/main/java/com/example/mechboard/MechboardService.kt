@@ -4,6 +4,7 @@ package com.example.mechboard
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Typeface
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
@@ -11,6 +12,7 @@ import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.core.content.res.ResourcesCompat
 
 /**
  * The mechboard [InputMethodService].
@@ -49,13 +51,15 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     private lateinit var layoutCycle: List<Pair<KeyboardLayout, Int>>
 
     /**
-     * Listens for changes to [PrefsKeys.KEYBOARD_LAYOUT] or [PrefsKeys.KEYBOARD_THEME] made via
-     * [SettingsActivity] and applies the change immediately, even while the keyboard is visible.
+     * Listens for changes to [PrefsKeys.KEYBOARD_LAYOUT], [PrefsKeys.KEYBOARD_THEME], or
+     * [PrefsKeys.KEYBOARD_FONT] made via [SettingsActivity] and applies the change
+     * immediately, even while the keyboard is visible.
      */
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         when (key) {
             PrefsKeys.KEYBOARD_LAYOUT -> applyLayoutFromPrefs()
             PrefsKeys.KEYBOARD_THEME  -> if (::keyboardView.isInitialized) setInputView(onCreateInputView())
+            PrefsKeys.KEYBOARD_FONT   -> applyFontFromPrefs()
         }
     }
 
@@ -113,6 +117,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         keyboardView.keyboard = keyboard
         keyboardView.setOnKeyboardActionListener(this)
         keyboardView.isPreviewEnabled = false
+        applyFontFromPrefs()
         return rootView
     }
 
@@ -234,6 +239,30 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         val intent = Intent(this, SettingsActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
+    }
+
+    /**
+     * Reads [PrefsKeys.KEYBOARD_FONT] and applies the resolved [Typeface] to the
+     * [keyboardView].  No-op if the view has not been initialised yet.
+     */
+    private fun applyFontFromPrefs() {
+        if (!::keyboardView.isInitialized) return
+        val fontId = prefs.getString(PrefsKeys.KEYBOARD_FONT, KeyboardFont.DEFAULT.id)
+            ?: KeyboardFont.DEFAULT.id
+        keyboardView.labelTypeface = resolveTypeface(KeyboardFont.fromId(fontId))
+    }
+
+    /**
+     * Resolves a [Typeface] for the given [font].
+     * Returns `null` for [KeyboardFont.DEFAULT] (system typeface).
+     * For bundled fonts the resource is looked up by name via [resources.getIdentifier]
+     * so that [KeyboardFont] has no direct [R] dependency.
+     */
+    private fun resolveTypeface(font: KeyboardFont): Typeface? {
+        val resName = font.fontResName ?: return null
+        val resId = resources.getIdentifier(resName, "font", packageName)
+        if (resId == 0) return null
+        return runCatching { ResourcesCompat.getFont(this, resId) }.getOrNull()
     }
 
     /**

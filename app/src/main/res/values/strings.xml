@@ -16,4 +16,7 @@
 
     <!-- Keyboard theme -->
     <string name="pref_keyboard_theme_title">Keyboard theme</string>
+
+    <!-- Keyboard font -->
+    <string name="pref_keyboard_font_title">Key font</string>
 </resources>
