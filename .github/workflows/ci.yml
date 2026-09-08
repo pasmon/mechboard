@@ -74,7 +74,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run instrumented tests on emulator
-        uses: ReactiveCircus/android-emulator-runner@v2.37.0
+        uses: ReactiveCircus/android-emulator-runner@v2.38.0
         with:
           api-level: 30
           arch: x86_64
