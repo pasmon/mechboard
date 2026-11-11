@@ -2,7 +2,10 @@ package com.example.mechboard
 
 import android.content.Context
 import android.os.Bundle
+import android.util.TypedValue
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.ColorUtils
+import androidx.core.view.WindowCompat
 
 /**
  * Hosts [SettingsFragment] and acts as the entry point for the keyboard
@@ -20,11 +23,27 @@ class SettingsActivity : AppCompatActivity() {
         setTheme(settingsThemeResId(KeyboardTheme.fromId(themeId)))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
+        matchSystemBarIconsToBackground()
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.settings_container, SettingsFragment())
                 .commit()
+        }
+    }
+
+    /**
+     * The window draws behind the status and navigation bars, so their icons sit
+     * on the theme's background colour. Makes the icons dark on a light background
+     * (Solarized Light) and light on a dark one.
+     */
+    private fun matchSystemBarIconsToBackground() {
+        val background = TypedValue()
+        if (!theme.resolveAttribute(android.R.attr.colorBackground, background, true)) return
+        val isLight = ColorUtils.calculateLuminance(background.data) > LIGHT_BACKGROUND_LUMINANCE
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = isLight
+            isAppearanceLightNavigationBars = isLight
         }
     }
 
@@ -39,5 +58,10 @@ class SettingsActivity : AppCompatActivity() {
         KeyboardTheme.DRACULA        -> R.style.Theme_Mechboard_Settings_Dracula
         KeyboardTheme.NORD           -> R.style.Theme_Mechboard_Settings_Nord
         KeyboardTheme.MONOKAI        -> R.style.Theme_Mechboard_Settings_Monokai
+    }
+
+    private companion object {
+        /** Backgrounds brighter than this get dark system bar icons. */
+        const val LIGHT_BACKGROUND_LUMINANCE = 0.5
     }
 }
