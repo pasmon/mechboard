@@ -2,31 +2,42 @@ package com.example.mechboard
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.media.AudioAttributes
-import android.media.SoundPool
 
 /**
  * Manages key-click audio playback.
  *
- * Sounds are loaded into a [SoundPool] at construction time. The raw-resource
- * IDs are resolved dynamically via [android.content.res.Resources.getIdentifier]
- * so that [SoundProfile] stays free of direct [R]-class references and is
- * testable with plain JVM unit tests.
+ * Sounds are loaded into a [SamplePlayer] (a [android.media.SoundPool] in
+ * production) at construction time: one generic sample per profile plus any
+ * dedicated per-[KeyKind] samples the profile ships. The raw-resource IDs are
+ * resolved dynamically via [android.content.res.Resources.getIdentifier] so that
+ * [SoundProfile] stays free of direct [R]-class references and is testable with
+ * plain JVM unit tests.
  *
  * Call [release] when the owning component is destroyed to free native resources.
  *
  * The active [SoundProfile] and volume are persisted via [SharedPreferences]
  * so that user preferences survive across IME sessions.
  */
-class SoundManager(context: Context, prefs: SharedPreferences) {
+class SoundManager(
+    context: Context,
+    prefs: SharedPreferences,
+    player: SamplePlayer = SoundPoolSamplePlayer(context),
+    private val variation: SoundVariation = SoundVariation()
+) {
 
-    private var soundPool: SoundPool? = buildSoundPool()
+    private var player: SamplePlayer? = player
 
     /**
-     * Maps each profile that has audio to its SoundPool *sample ID* as returned
-     * by [SoundPool.load]. A value of 0 indicates the load failed.
+     * Maps each profile that has audio to its generic *sample ID* as returned by
+     * [SamplePlayer.load]. A value of 0 indicates the load failed.
      */
     private val sampleIds: MutableMap<SoundProfile, Int> = mutableMapOf()
+
+    /**
+     * Sample IDs of the dedicated per-[KeyKind] samples a profile ships (e.g. its
+     * space-bar sound). Kinds without an entry fall back to [sampleIds].
+     */
+    private val kindSampleIds: MutableMap<Pair<SoundProfile, KeyKind>, Int> = mutableMapOf()
 
     private val sharedPrefs: SharedPreferences = prefs
 
@@ -51,7 +62,7 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
 
     init {
         sharedPrefs.registerOnSharedPreferenceChangeListener(prefChangeListener)
-        soundPool?.let { sp ->
+        this.player?.let { sp ->
             SoundProfile.values()
                 .filter { it.rawFileName != null }
                 .forEach { profile ->
@@ -59,7 +70,15 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
                         profile.rawFileName, "raw", context.packageName
                     )
                     if (resId != 0) {
-                        sampleIds[profile] = sp.load(context, resId, 1)
+                        sampleIds[profile] = sp.load(resId)
+                    }
+                    KeyKind.values().forEach { kind ->
+                        val kindResId = profile.sampleNameFor(kind)?.let { name ->
+                            context.resources.getIdentifier(name, "raw", context.packageName)
+                        } ?: 0
+                        if (kindResId != 0) {
+                            kindSampleIds[profile to kind] = sp.load(kindResId)
+                        }
                     }
                 }
         }
@@ -69,15 +88,23 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
     // Public API
     // -------------------------------------------------------------------------
 
-    /** Plays the currently selected key-click sound (no-op when muted, silent, or sample unavailable). */
-    fun playKeySound() {
+    /**
+     * Plays the currently selected profile's sound for a key of the given [kind]
+     * (no-op when muted, silent, or sample unavailable).
+     *
+     * Uses the profile's dedicated sample for [kind] when it ships one and its
+     * generic sample otherwise. Pitch and volume vary slightly per call, see
+     * [SoundVariation].
+     */
+    fun playKeySound(kind: KeyKind = KeyKind.CHARACTER) {
         if (!isSoundEnabled) return
         val profile = currentProfile
         if (profile.rawFileName == null) return
-        // A sample ID of 0 means the load failed; skip it silently.
-        val sampleId = sampleIds[profile]?.takeIf { it > 0 } ?: return
-        val vol = volume
-        soundPool?.play(sampleId, vol, vol, 1, 0, 1.0f)
+        // A sample ID of 0 means the load failed; fall back or skip it silently.
+        val sampleId = kindSampleIds[profile to kind]?.takeIf { it > 0 }
+            ?: sampleIds[profile]?.takeIf { it > 0 }
+            ?: return
+        player?.play(sampleId, variation.nextVolume(volume), variation.nextRate())
     }
 
     /** Changes the active profile and persists the choice. */
@@ -98,27 +125,16 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
             sharedPrefs.edit().putInt(PREF_VOLUME, pct).apply()
         }
 
-    /** Releases the underlying [SoundPool]. Must be called in onDestroy. */
+    /** Releases the underlying [SamplePlayer]. Must be called in onDestroy. */
     fun release() {
         sharedPrefs.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
-        soundPool?.release()
-        soundPool = null
+        player?.release()
+        player = null
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
-
-    private fun buildSoundPool(): SoundPool {
-        val attrs = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
-        return SoundPool.Builder()
-            .setMaxStreams(MAX_STREAMS)
-            .setAudioAttributes(attrs)
-            .build()
-    }
 
     companion object {
         const val PREF_SOUND_PROFILE = PrefsKeys.SOUND_PROFILE
@@ -126,7 +142,6 @@ class SoundManager(context: Context, prefs: SharedPreferences) {
         const val PREF_VOLUME        = PrefsKeys.VOLUME
 
         private const val DEFAULT_PROFILE_ID    = "cherry_blue"   // == SoundProfile.CHERRY_MX_BLUE.id
-        private const val MAX_STREAMS           = 5
         private const val DEFAULT_VOLUME_PERCENT = 80
     }
 }

@@ -6,7 +6,7 @@
 [![Min SDK](https://img.shields.io/badge/Android-API%2021%2B-brightgreen?logo=android)](https://developer.android.com/about/versions/lollipop)
 [![Language: Kotlin](https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 
-A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound effects**. Pick from six sound profiles, toggle sounds on/off, and fine-tune the volume — all from a built-in settings screen.
+A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound effects**. Pick from nine sound profiles, toggle sounds on/off, and fine-tune the volume — all from a built-in settings screen.
 
 ---
 
@@ -24,6 +24,7 @@ A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound ef
   | Holy Panda | Tactile Thock |
   | Typewriter | Classic typewriter |
   | Silent | No sound |
+- ⌨️ **Sounds like typing, not like a loop** — the click plays the moment your finger lands, every keystroke varies slightly in pitch and loudness, and the Cherry MX and Topre profiles have their own space bar, enter and backspace sounds
 - 🔊 **Master on/off toggle** — silence all sounds instantly
 - 🔉 **Volume slider** (0 – 100 %) independent of system volume
 - ⚙️ **In-keyboard settings key** — opens the settings screen without leaving the current app
@@ -81,7 +82,10 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | Class | Role |
 |---|---|
 | `MechboardService` | Main `InputMethodService`; inflates the keyboard view, routes key events, manages caps-lock state, and triggers sound playback |
-| `SoundManager` | Wraps `SoundPool`; loads short sound effects (WAV/MP3) per profile, reads/writes preferences, exposes `playKeySound()` |
+| `SoundManager` | Loads short sound effects (WAV/MP3/OGG) per profile, picks the sample for each key, reads/writes preferences, exposes `playKeySound(kind)` |
+| `SamplePlayer` | Thin interface over `SoundPool` (`SoundPoolSamplePlayer`) so `SoundManager` can be unit-tested with a fake |
+| `KeyKind` | Enum grouping key codes by how the key sounds: character, space, enter, backspace |
+| `SoundVariation` | Small random pitch (±4 %) and volume (up to −10 %) change applied to every keystroke |
 | `SoundProfile` | Enum of the nine profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
 | `SettingsActivity` | `AppCompatActivity` that hosts `SettingsFragment` |
 | `SettingsFragment` | `PreferenceFragmentCompat`; renders profile picker, master toggle, and volume slider |
@@ -113,6 +117,15 @@ Unit tests live in `app/src/test/` and use **JUnit 4 + Mockito**. They have no d
    )
    ```
 3. That's it — `SoundManager` iterates all profiles dynamically.
+
+### Adding a per-key sound to a profile
+
+A profile can have its own sound for the space bar, enter and backspace. Place a
+file named `<rawFileName>_space`, `<rawFileName>_enter` or
+`<rawFileName>_backspace` in `app/src/main/res/raw/` (e.g. `my_switch_space.ogg`);
+no code change is needed. Keys without a dedicated file use the profile's
+generic sample. Trim leading silence from the file, otherwise the sound lags the
+key press.
 
 ---
 
