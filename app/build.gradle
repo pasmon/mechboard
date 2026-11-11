@@ -26,11 +26,11 @@ def versionCodeFor = { String name ->
 }
 
 android {
-    namespace 'com.example.mechboard'
+    namespace 'io.github.pasmon.mechboard'
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.example.mechboard"
+        applicationId "io.github.pasmon.mechboard"
         minSdk 21
         targetSdk 36
         versionCode versionCodeFor(appVersionName)

@@ -1,2 +1,2 @@
 # Add project specific ProGuard rules here.
--keep class com.example.mechboard.** { *; }
+-keep class io.github.pasmon.mechboard.** { *; }

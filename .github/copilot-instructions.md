@@ -23,7 +23,7 @@
 
 ## Key Conventions
 
-- **Package**: `com.example.mechboard`
+- **Package**: `io.github.pasmon.mechboard`
 - **Language**: Kotlin (JVM target 11)
 - **Min SDK**: 21 · **Target/Compile SDK**: 36
 - **Version**: `versionName` comes from `-PversionName` (set from the git tag by the release workflow); `versionCode` is derived from it in `app/build.gradle`.
@@ -59,7 +59,7 @@ res/
 ## Testing
 
 - **Framework**: JUnit 4 + Mockito 5 + mockito-kotlin 5; Robolectric for code that needs Android classes
-- **Location**: `app/src/test/java/com/example/mechboard/`
+- **Location**: `app/src/test/java/io/github/pasmon/mechboard/`
 - **Run tests**: `./gradlew test`
 - Prefer plain JVM tests of pure Kotlin classes. Use `@RunWith(RobolectricTestRunner::class)` only when the code under test needs Android classes (views, `EditorInfo`, window insets).
 - `SoundPool` is a native component; do not mock it. Test `SoundManager` through a fake `SamplePlayer` (see `SoundManagerPlaybackTest`).
