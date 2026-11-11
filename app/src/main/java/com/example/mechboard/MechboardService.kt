@@ -1,56 +1,44 @@
-@file:Suppress("DEPRECATION")
-
 package com.example.mechboard
 
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.inputmethodservice.InputMethodService
-import android.inputmethodservice.Keyboard
-import android.inputmethodservice.KeyboardView
+import android.text.InputType
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 /**
  * The mechboard [InputMethodService].
  *
- * Inflates a [KeyboardView] backed by an XML [Keyboard] definition, plays a
- * mechanical key-click sound through [SoundManager] on every key event, and
- * provides a dedicated key to open [SettingsActivity].
- *
- * Note: [android.inputmethodservice.Keyboard] / [KeyboardView] are deprecated
- * in API 29 but remain available on all supported API levels (21+). A migration
- * to a custom View is planned as a follow-up.
+ * Shows a [MechboardKeyboardView], plays a mechanical key-click sound through
+ * [SoundManager] on every key press, edits the text field through
+ * [TypingController], and provides a dedicated key to open [SettingsActivity].
  */
-class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionListener {
+class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
 
     private lateinit var keyboardView: MechboardKeyboardView
-    /**
-     * Keyboard definition reloaded whenever the layout changes.
-     */
-    private lateinit var keyboard: Keyboard
     private lateinit var soundManager: SoundManager
     private lateinit var prefs: SharedPreferences
 
-    private var isShifted = false
-    /** Resource id of the currently active main keyboard XML definition. */
-    private var currentLayoutResId = 0
-    /** Resource id of the universal symbols keyboard. Resolved once in [onCreate]. */
-    private var symbolsResId = 0
+    private val typing = TypingController(
+        connection = { currentInputConnection },
+        editorInfo = { currentInputEditorInfo },
+        autoCapitalize = { prefs.getBoolean(PrefsKeys.AUTO_CAPITALIZE, true) },
+        onShiftStateChanged = { state ->
+            if (::keyboardView.isInitialized) keyboardView.shiftState = state
+        }
+    )
+
+    /** The language layout selected in [SettingsActivity]. */
+    private var currentLayout = KeyboardLayout.ENGLISH
     /** Whether the symbols/numbers keyboard is currently displayed. */
     private var isSymbolsMode = false
-    /** Whether [onPress] already played the sound for the next [onKey] event. */
-    private var pressSoundPlayed = false
-
-    /**
-     * Ordered list of all supported layouts built from [KeyboardLayout] entries.
-     * Used to resolve the layout selected via [SettingsActivity].
-     * Initialised in [onCreate] where [android.content.res.Resources] is available.
-     */
-    private lateinit var layoutCycle: List<Pair<KeyboardLayout, Int>>
 
     /**
      * Listens for changes to [PrefsKeys.KEYBOARD_LAYOUT], [PrefsKeys.KEYBOARD_THEME], or
@@ -62,6 +50,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
             PrefsKeys.KEYBOARD_LAYOUT -> applyLayoutFromPrefs()
             PrefsKeys.KEYBOARD_THEME  -> if (::keyboardView.isInitialized) setInputView(onCreateInputView())
             PrefsKeys.KEYBOARD_FONT   -> applyFontFromPrefs()
+            PrefsKeys.AUTO_CAPITALIZE -> typing.updateShiftForCursor()
         }
     }
 
@@ -72,39 +61,12 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     override fun onCreate() {
         super.onCreate()
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val resolvedLayoutCycle = KeyboardLayout.values().mapNotNull { layout ->
-            val resId = resources.getIdentifier(layout.xmlResName, "xml", packageName)
-            if (resId == 0) null else layout to resId
-        }
-        layoutCycle = resolvedLayoutCycle.ifEmpty {
-            throw IllegalStateException(
-                "No keyboard layouts could be resolved from KeyboardLayout. " +
-                    "Check xmlResName values and XML resources under res/xml."
-            )
-        }
-        currentLayoutResId = layoutResIdFromId(
-            prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
-                ?: KeyboardLayout.ENGLISH.id
-        )
-        symbolsResId = resources.getIdentifier("keyboard_symbols", "xml", packageName)
-        if (symbolsResId == 0) {
-            throw IllegalStateException(
-                "keyboard_symbols XML resource not found. " +
-                    "Ensure keyboard_symbols.xml exists under res/xml."
-            )
-        }
-        keyboard = Keyboard(this, currentLayoutResId)
+        currentLayout = layoutFromPrefs()
         soundManager = SoundManager(this, prefs)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
     }
 
     override fun onCreateInputView(): View {
-        // Always reset to the main keyboard when the view is (re)created.
-        isSymbolsMode = false
-        keyboard = Keyboard(this, currentLayoutResId)
-        keyboard.isShifted = isShifted
-        // Inflate the wrapper layout (LinearLayout) and look up the KeyboardView
-        // inside it. Casting the root to KeyboardView would throw ClassCastException.
         // A ContextThemeWrapper applies the active KeyboardTheme so that all ?attr/
         // colour references in input.xml and key_background.xml are resolved correctly.
         val themeStyleResId = styleResIdForTheme(
@@ -116,11 +78,53 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         val themedContext = ContextThemeWrapper(this, themeStyleResId)
         val rootView = LayoutInflater.from(themedContext).inflate(R.layout.input, null)
         keyboardView = rootView.findViewById(R.id.keyboard_view)
-        keyboardView.keyboard = keyboard
-        keyboardView.setOnKeyboardActionListener(this)
-        keyboardView.isPreviewEnabled = false
+        keyboardView.listener = this
+        keyboardView.shiftState = typing.shiftState
+        showCurrentKeyboard()
         applyFontFromPrefs()
+        keepClearOfSystemBars(rootView)
         return rootView
+    }
+
+    /**
+     * Pads [rootView] by the size of the navigation bar and any display cutout.
+     *
+     * On Android 15 and later the keyboard window extends behind the navigation
+     * bar; without the padding the bottom row of keys would sit under it. The
+     * padded area shows [rootView]'s background, i.e. the keyboard colour. Where
+     * the window does not extend behind the bars the insets are zero.
+     */
+    private fun keepClearOfSystemBars(rootView: View) {
+        ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(bars.left, 0, bars.right, bars.bottom)
+            insets
+        }
+    }
+
+    override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        if (!restarting) {
+            // A new field: start on the keyboard that suits what it asks for.
+            isSymbolsMode = wantsSymbolsFirst(info)
+            showCurrentKeyboard()
+            typing.resetShift()
+        }
+        typing.updateShiftForCursor()
+    }
+
+    override fun onUpdateSelection(
+        oldSelStart: Int, oldSelEnd: Int,
+        newSelStart: Int, newSelEnd: Int,
+        candidatesStart: Int, candidatesEnd: Int
+    ) {
+        super.onUpdateSelection(
+            oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd
+        )
+        // The cursor moved, possibly to or from the start of a sentence.
+        typing.updateShiftForCursor()
     }
 
     override fun onDestroy() {
@@ -130,118 +134,64 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     }
 
     // -------------------------------------------------------------------------
-    // KeyboardView.OnKeyboardActionListener
+    // MechboardKeyboardView.Listener
     // -------------------------------------------------------------------------
-
-    override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
-        // The sound for a key press is played in onPress, when the finger lands.
-        // onKey only makes a sound when no press sound preceded it: on each
-        // auto-repeat of a held key, and for a touch that began between keys.
-        if (pressSoundPlayed) {
-            pressSoundPlayed = false
-        } else {
-            soundManager.playKeySound(KeyKind.fromKeyCode(primaryCode))
-        }
-        val ic = currentInputConnection ?: return
-
-        when (primaryCode) {
-            Keyboard.KEYCODE_DELETE -> ic.deleteSurroundingText(1, 0)
-            Keyboard.KEYCODE_SHIFT  -> handleShift()
-            Keyboard.KEYCODE_DONE   -> {
-                // Honour the field's requested action (Search, Send, Next, Done…).
-                // Fall back to committing a newline for multiline fields (no action set).
-                val imeAction = currentInputEditorInfo
-                    ?.imeOptions
-                    ?.and(EditorInfo.IME_MASK_ACTION)
-                    ?: EditorInfo.IME_ACTION_NONE
-                if (imeAction != EditorInfo.IME_ACTION_NONE) {
-                    ic.performEditorAction(imeAction)
-                } else {
-                    ic.commitText("\n", 1)
-                }
-                clearShift()
-            }
-            KEYCODE_SPACE           -> {
-                ic.commitText(" ", 1)
-                clearShift()
-            }
-            KEYCODE_SETTINGS        -> openSettings()
-            KEYCODE_SYMBOLS         -> toggleSymbolsMode()
-            else -> {
-                val ch = primaryCode.toChar()
-                ic.commitText(
-                    if (isShifted) ch.uppercaseChar().toString() else ch.toString(),
-                    1
-                )
-                clearShift()
-            }
-        }
-    }
 
     /**
      * Plays the key sound on touch-down so it lines up with the finger, the way a
      * switch sounds when it is pressed rather than when it is let go.
-     *
-     * [KeyboardView] reports [NO_KEY] when the touch lands between keys; such a
-     * touch may still resolve to a key on release, in which case [onKey] plays it.
      */
-    override fun onPress(primaryCode: Int) {
-        pressSoundPlayed = primaryCode != NO_KEY
-        if (pressSoundPlayed) {
-            soundManager.playKeySound(KeyKind.fromKeyCode(primaryCode))
+    override fun onPress(code: Int) {
+        soundManager.playKeySound(KeyKind.fromKeyCode(code))
+    }
+
+    override fun onKey(code: Int, isRepeat: Boolean) {
+        // The first event of a press already made its sound in onPress.
+        if (isRepeat) soundManager.playKeySound(KeyKind.fromKeyCode(code))
+        when (code) {
+            KeyCodes.SETTINGS -> openSettings()
+            KeyCodes.SYMBOLS  -> {
+                isSymbolsMode = !isSymbolsMode
+                showCurrentKeyboard()
+            }
+            else -> typing.onKey(code)
         }
     }
-    override fun onRelease(primaryCode: Int) {}
-    override fun onText(text: CharSequence?) {
-        val safeText = text ?: return
-        currentInputConnection?.commitText(safeText, 1)
-    }
-    override fun swipeLeft() {}
-    override fun swipeRight() {}
-    override fun swipeDown() {}
-    override fun swipeUp() {}
 
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
 
-    private fun handleShift() {
-        isShifted = !isShifted
-        keyboard.isShifted = isShifted
-        keyboardView.invalidateAllKeys()
+    /** Shows the symbols keyboard or the current language's letters, per [isSymbolsMode]. */
+    private fun showCurrentKeyboard() {
+        if (!::keyboardView.isInitialized) return
+        keyboardView.definition =
+            if (isSymbolsMode) KeyboardDefinitions.SYMBOLS else currentLayout.definition
     }
 
-    /** Clears shift state and refreshes the keyboard if shift was active. */
-    private fun clearShift() {
-        if (isShifted) {
-            isShifted = false
-            keyboard.isShifted = false
-            keyboardView.invalidateAllKeys()
+    /** Whether a field is for numbers, so that the digits should be shown first. */
+    private fun wantsSymbolsFirst(info: EditorInfo?): Boolean =
+        when ((info?.inputType ?: InputType.TYPE_NULL) and InputType.TYPE_MASK_CLASS) {
+            InputType.TYPE_CLASS_NUMBER,
+            InputType.TYPE_CLASS_PHONE,
+            InputType.TYPE_CLASS_DATETIME -> true
+            else -> false
         }
-    }
+
+    private fun layoutFromPrefs(): KeyboardLayout = KeyboardLayout.fromId(
+        prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
+            ?: KeyboardLayout.ENGLISH.id
+    )
 
     /**
      * Applies the layout stored in [PrefsKeys.KEYBOARD_LAYOUT] immediately.
-     * Called on startup and whenever the preference changes (e.g. from [SettingsActivity]).
+     * Called whenever the preference changes (e.g. from [SettingsActivity]).
      */
     private fun applyLayoutFromPrefs() {
-        val layoutId = prefs.getString(PrefsKeys.KEYBOARD_LAYOUT, KeyboardLayout.ENGLISH.id)
-            ?: KeyboardLayout.ENGLISH.id
-        val newResId = layoutResIdFromId(layoutId)
-        if (newResId == currentLayoutResId && !isSymbolsMode) return
+        currentLayout = layoutFromPrefs()
         isSymbolsMode = false
-        currentLayoutResId = newResId
-        isShifted = false
-        keyboard = Keyboard(this, currentLayoutResId)
-        if (::keyboardView.isInitialized) {
-            keyboardView.keyboard = keyboard
-            keyboardView.invalidateAllKeys()
-        }
+        showCurrentKeyboard()
     }
-
-    /** Maps a stored layout id (e.g. [KeyboardLayout.ENGLISH.id]) to its XML resource id. */
-    private fun layoutResIdFromId(layoutId: String): Int =
-        layoutCycle.firstOrNull { it.first.id == layoutId }?.second ?: layoutCycle.first().second
 
     /**
      * Returns the Android style resource ID for the given [theme].
@@ -286,38 +236,7 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         return runCatching { ResourcesCompat.getFont(this, resId) }.getOrNull()
     }
 
-    /**
-     * Toggles between the main keyboard and the symbols/numbers keyboard.
-     * Called when the user presses "?123" (main keyboard) or "ABC" (symbols keyboard).
-     */
-    private fun toggleSymbolsMode() {
-        isSymbolsMode = !isSymbolsMode
-        val resId = if (isSymbolsMode) symbolsResId else currentLayoutResId
-        isShifted = false
-        keyboard = Keyboard(this, resId)
-        if (::keyboardView.isInitialized) {
-            keyboardView.keyboard = keyboard
-            keyboardView.invalidateAllKeys()
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Constants
-    // -------------------------------------------------------------------------
-
     companion object {
         const val PREFS_NAME = "mechboard_prefs"
-
-        /** Code [KeyboardView] passes to [onPress] when the touch is not on any key. */
-        const val NO_KEY = 0
-
-        /** Key code for the space bar (ASCII space). */
-        const val KEYCODE_SPACE = 32
-
-        /** Key code for the dedicated settings key (negative = custom). */
-        const val KEYCODE_SETTINGS = -101
-
-        /** Key code for the symbols/numbers keyboard toggle ("?123" / "ABC"). */
-        const val KEYCODE_SYMBOLS = -102
     }
 }

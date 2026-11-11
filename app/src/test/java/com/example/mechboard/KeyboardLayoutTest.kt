@@ -21,9 +21,9 @@ class KeyboardLayoutTest {
     }
 
     @Test
-    fun `all layouts have non-blank xmlResNames`() {
+    fun `all layouts have keys`() {
         KeyboardLayout.values().forEach { layout ->
-            assertFalse("${layout.name} has a blank xmlResName", layout.xmlResName.isBlank())
+            assertFalse("${layout.name} has no keys", layout.definition.keys.isEmpty())
         }
     }
 
@@ -52,8 +52,8 @@ class KeyboardLayoutTest {
     }
 
     @Test
-    fun `all layouts have unique xmlResNames`() {
-        val names = KeyboardLayout.values().map { it.xmlResName }
-        assertEquals("Duplicate KeyboardLayout xmlResNames detected", names.size, names.distinct().size)
+    fun `all layouts have distinct definitions`() {
+        val definitions = KeyboardLayout.values().map { it.definition }
+        assertEquals("Two layouts share a definition", definitions.size, definitions.distinct().size)
     }
 }

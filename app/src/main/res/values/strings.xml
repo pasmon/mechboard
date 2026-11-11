@@ -10,9 +10,19 @@
     <string name="pref_volume_title">Volume</string>
     <string name="pref_volume_summary">Key-click volume (0 – 100)</string>
     <string name="pref_keyboard_layout_title">Keyboard language</string>
+    <string name="pref_auto_capitalize_title">Auto-capitalisation</string>
+    <string name="pref_auto_capitalize_summary">Start sentences with a capital letter</string>
 
-    <!-- Keyboard key labels -->
-    <string name="key_label_symbols">\?123</string>
+    <!-- What a screen reader announces for keys whose label is a symbol -->
+    <string name="key_description_shift">Shift</string>
+    <string name="key_description_shift_on">Shift on</string>
+    <string name="key_description_caps_lock">Caps lock on</string>
+    <string name="key_description_backspace">Delete</string>
+    <string name="key_description_enter">Enter</string>
+    <string name="key_description_space">Space</string>
+    <string name="key_description_settings">Keyboard settings</string>
+    <string name="key_description_symbols">Symbols</string>
+    <string name="key_description_letters">Letters</string>
 
     <!-- Keyboard theme -->
     <string name="pref_keyboard_theme_title">Keyboard theme</string>

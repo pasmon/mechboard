@@ -2,4 +2,15 @@
 <resources>
     <!-- Height of each key row -->
     <dimen name="key_height">56dp</dimen>
+    <!-- Text size of single-character key labels -->
+    <dimen name="key_text_size">18sp</dimen>
+    <!-- Text size of key labels that are words, e.g. "Space" -->
+    <dimen name="key_word_text_size">14sp</dimen>
+    <!-- Text size of the long-press hint in a key's corner -->
+    <dimen name="key_hint_text_size">9sp</dimen>
+    <!-- Distance of the long-press hint from the key's top and right edges -->
+    <dimen name="key_hint_padding">4dp</dimen>
+    <!-- Bar drawn under the shift arrow while caps lock is on -->
+    <dimen name="key_lock_bar_height">2dp</dimen>
+    <dimen name="key_lock_bar_inset">10dp</dimen>
 </resources>

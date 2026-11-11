@@ -14,4 +14,6 @@ object PrefsKeys {
     const val KEYBOARD_LAYOUT = "keyboard_layout"
     const val KEYBOARD_THEME  = "keyboard_theme"
     const val KEYBOARD_FONT   = "keyboard_font"
+    /** Whether sentences start with a capital letter automatically. Boolean, default true. */
+    const val AUTO_CAPITALIZE = "auto_capitalize"
 }
