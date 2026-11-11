@@ -24,6 +24,13 @@
         android:defaultValue="english"
         app:useSimpleSummaryProvider="true" />
 
+    <!-- Capital letter at the start of sentences, where the text field asks for it -->
+    <SwitchPreferenceCompat
+        android:key="auto_capitalize"
+        android:title="@string/pref_auto_capitalize_title"
+        android:summary="@string/pref_auto_capitalize_summary"
+        android:defaultValue="true" />
+
     <!-- Keyboard theme chooser -->
     <ListPreference
         android:key="keyboard_theme"

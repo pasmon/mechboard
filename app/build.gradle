@@ -3,16 +3,38 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// The release workflow passes the version from the git tag (-PversionName=1.2.3).
+// Local builds fall back to a development version.
+def appVersionName = (findProperty('versionName') ?: '0.0.0-dev').toString()
+
+/**
+ * Derives the Play Store version code from a semantic version name:
+ * 1.2.3 -> 10203. Each component may go up to 99; a pre-release suffix such as
+ * "-beta1" is ignored, so pre-releases share the code of their final release.
+ */
+def versionCodeFor = { String name ->
+    def matcher = name =~ /^(\d+)\.(\d+)\.(\d+)/
+    if (!matcher.find()) {
+        throw new GradleException("versionName '$name' must start with MAJOR.MINOR.PATCH")
+    }
+    def (major, minor, patch) = (1..3).collect { matcher.group(it) as int }
+    if (minor > 99 || patch > 99) {
+        throw new GradleException("versionName '$name': minor and patch must be below 100")
+    }
+    // Never 0: Android requires a positive version code.
+    Math.max(1, major * 10000 + minor * 100 + patch)
+}
+
 android {
-    namespace 'com.example.mechboard'
-    compileSdk 34
+    namespace 'io.github.pasmon.mechboard'
+    compileSdk 36
 
     defaultConfig {
-        applicationId "com.example.mechboard"
+        applicationId "io.github.pasmon.mechboard"
         minSdk 21
-        targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        targetSdk 36
+        versionCode versionCodeFor(appVersionName)
+        versionName appVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -45,6 +67,12 @@ android {
     buildFeatures {
         viewBinding true
     }
+    testOptions {
+        unitTests {
+            // Robolectric tests inflate real layouts, themes and drawables.
+            includeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -56,6 +84,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.24.0'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:5.4.0'
+    testImplementation 'org.robolectric:robolectric:4.17'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
 }

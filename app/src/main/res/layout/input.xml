@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Root layout for the input view returned by MechboardService.onCreateInputView().
-    The KeyboardView fills the bottom of the screen and is styled with the active
+    The keyboard view fills the bottom of the screen and is styled with the active
     keyboard theme palette, applied via ContextThemeWrapper at inflation time.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -10,14 +10,10 @@
     android:layout_height="wrap_content"
     android:background="?attr/keyboardBgColor">
 
-    <com.example.mechboard.MechboardKeyboardView
+    <io.github.pasmon.mechboard.MechboardKeyboardView
         android:id="@+id/keyboard_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:keyBackground="@drawable/key_background"
-        android:keyTextColor="?attr/keyLabelColor"
-        android:keyTextSize="18sp"
-        android:labelTextSize="14sp"
         android:background="?attr/keyboardBgColor"
         android:paddingTop="4dp"
         android:paddingBottom="4dp" />
