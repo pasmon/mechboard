@@ -42,6 +42,8 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     private var symbolsResId = 0
     /** Whether the symbols/numbers keyboard is currently displayed. */
     private var isSymbolsMode = false
+    /** Whether [onPress] already played the sound for the next [onKey] event. */
+    private var pressSoundPlayed = false
 
     /**
      * Ordered list of all supported layouts built from [KeyboardLayout] entries.
@@ -132,7 +134,14 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
     // -------------------------------------------------------------------------
 
     override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
-        soundManager.playKeySound()
+        // The sound for a key press is played in onPress, when the finger lands.
+        // onKey only makes a sound when no press sound preceded it: on each
+        // auto-repeat of a held key, and for a touch that began between keys.
+        if (pressSoundPlayed) {
+            pressSoundPlayed = false
+        } else {
+            soundManager.playKeySound(KeyKind.fromKeyCode(primaryCode))
+        }
         val ic = currentInputConnection ?: return
 
         when (primaryCode) {
@@ -169,7 +178,19 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
         }
     }
 
-    override fun onPress(primaryCode: Int) {}
+    /**
+     * Plays the key sound on touch-down so it lines up with the finger, the way a
+     * switch sounds when it is pressed rather than when it is let go.
+     *
+     * [KeyboardView] reports [NO_KEY] when the touch lands between keys; such a
+     * touch may still resolve to a key on release, in which case [onKey] plays it.
+     */
+    override fun onPress(primaryCode: Int) {
+        pressSoundPlayed = primaryCode != NO_KEY
+        if (pressSoundPlayed) {
+            soundManager.playKeySound(KeyKind.fromKeyCode(primaryCode))
+        }
+    }
     override fun onRelease(primaryCode: Int) {}
     override fun onText(text: CharSequence?) {
         val safeText = text ?: return
@@ -286,6 +307,9 @@ class MechboardService : InputMethodService(), KeyboardView.OnKeyboardActionList
 
     companion object {
         const val PREFS_NAME = "mechboard_prefs"
+
+        /** Code [KeyboardView] passes to [onPress] when the touch is not on any key. */
+        const val NO_KEY = 0
 
         /** Key code for the space bar (ASCII space). */
         const val KEYCODE_SPACE = 32

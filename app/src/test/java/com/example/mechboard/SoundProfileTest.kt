@@ -98,6 +98,27 @@ class SoundProfileTest {
     }
 
     @Test
+    fun `sampleNameFor appends the kind suffix to rawFileName`() {
+        assertEquals("cherry_blue_space", SoundProfile.CHERRY_MX_BLUE.sampleNameFor(KeyKind.SPACE))
+        assertEquals("topre_enter", SoundProfile.TOPRE.sampleNameFor(KeyKind.ENTER))
+        assertEquals("alps_backspace", SoundProfile.ALPS.sampleNameFor(KeyKind.BACKSPACE))
+    }
+
+    @Test
+    fun `sampleNameFor is null for CHARACTER which uses the generic sample`() {
+        SoundProfile.values().forEach { profile ->
+            assertNull(profile.name, profile.sampleNameFor(KeyKind.CHARACTER))
+        }
+    }
+
+    @Test
+    fun `sampleNameFor is null for every kind of SILENT`() {
+        KeyKind.values().forEach { kind ->
+            assertNull(kind.name, SoundProfile.SILENT.sampleNameFor(kind))
+        }
+    }
+
+    @Test
     fun `all profiles are non-null`() {
         SoundProfile.values().forEach { assertNotNull(it) }
     }

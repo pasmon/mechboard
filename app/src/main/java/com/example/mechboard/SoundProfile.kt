@@ -67,6 +67,21 @@ enum class SoundProfile(
         rawFileName = null
     );
 
+    /**
+     * Raw-resource name of the sample dedicated to [kind], or `null` if this profile
+     * is silent or [kind] has no dedicated sample.
+     *
+     * The name follows the convention `<rawFileName>_<suffix>` (e.g. `cherry_blue_space`).
+     * A non-null result only names where such a sample *would* live; profiles are not
+     * required to ship one, and [SoundManager] falls back to [rawFileName] when the
+     * resource does not exist.
+     */
+    fun sampleNameFor(kind: KeyKind): String? {
+        val base = rawFileName ?: return null
+        val suffix = kind.sampleSuffix ?: return null
+        return "${base}_$suffix"
+    }
+
     companion object {
         /** Returns the profile whose [SoundProfile.id] matches [id], or [CHERRY_MX_BLUE] as default. */
         fun fromId(id: String): SoundProfile =

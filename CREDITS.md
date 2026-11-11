@@ -38,6 +38,28 @@ each profile's asset directory.
 
 ---
 
+## Per-Key Samples
+
+Dedicated space bar, enter and backspace sounds for the profiles below were cut
+from the single-file sound packs in the current
+[Mechvibes](https://github.com/hainguyents13/mechvibes) repository (tag `v3.5.6`,
+commit `56d7135`). Each sample is the *press* half of the key's entry in the
+pack's `config.json`, mixed down to mono, trimmed of leading silence,
+level-matched to the profile's generic sample and encoded as Ogg Vorbis.
+
+| Files | Profile | Upstream sound pack | Upstream keys | License |
+|---|---|---|---|---|
+| `cherry_blue_space.ogg`, `cherry_blue_enter.ogg`, `cherry_blue_backspace.ogg` | Cherry MX Blue (Clicky) | `soundpacks/keyboard/cherrymx-blue-abs/sound.ogg` – "CherryMX Blue - ABS keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+| `cherry_red_space.ogg`, `cherry_red_enter.ogg`, `cherry_red_backspace.ogg` | Cherry MX Red (Linear) | `soundpacks/keyboard/cherrymx-red-abs/sound.ogg` – "CherryMX Red - ABS keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+| `cherry_brown_space.ogg`, `cherry_brown_enter.ogg`, `cherry_brown_backspace.ogg` | Cherry MX Brown (Tactile) | `soundpacks/keyboard/cherrymx-brown-abs/sound.ogg` – "CherryMX Brown - ABS keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+| `topre_space.ogg`, `topre_enter.ogg`, `topre_backspace.ogg` | Topre (Thocky) | `soundpacks/keyboard/topre-purple-hybrid-pbt/sound.ogg` – "Topre Purple Hybrid - PBT keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+
+These come from different recordings than the profiles' generic samples listed
+above, whose upstream paths (`src/audio/...`) no longer exist in the Mechvibes
+repository.
+
+---
+
 ## Mechvibes MIT License
 
 ```
