@@ -280,7 +280,8 @@ class MechboardService : InputMethodService(),
         }
         wordToOffer = null
         suggestionStrip.items = WordSuggestions.stripFor(
-            typing.wordAtCursor(), dictionary, personalDictionary.asWordDictionary()
+            typing.wordAtCursor(), dictionary, personalDictionary.asWordDictionary(),
+            currentLayout.neighbours
         )
     }
 

@@ -21,6 +21,9 @@ enum class KeyboardLayout(
     FRENCH( id = "french",   displayName = "French",   definition = KeyboardDefinitions.FRENCH),
     SPANISH(id = "spanish",  displayName = "Spanish",  definition = KeyboardDefinitions.SPANISH);
 
+    /** Which letter keys of [definition] are next to each other, for typo-tolerant suggestions. */
+    val neighbours: KeyNeighbours by lazy { KeyNeighbours.fromDefinition(definition) }
+
     companion object {
         /** Returns the layout whose [id] matches [id], or [ENGLISH] as the default. */
         fun fromId(id: String): KeyboardLayout =

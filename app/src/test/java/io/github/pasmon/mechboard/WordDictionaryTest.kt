@@ -78,4 +78,61 @@ class WordDictionaryTest {
         val large = WordDictionary(words)
         assertEquals(words.take(3), large.completions("a", 3))
     }
+
+    // ── suggestions with typos ───────────────────────────────────────────────
+
+    // Most frequent first.
+    private val words = WordDictionary(
+        listOf("the", "of", "and", "to", "hello", "help", "ten", "then", "received", "receive", "keyboard", "päivä", "päivänä")
+    )
+    private val qwerty = KeyNeighbours.fromDefinition(KeyboardDefinitions.ENGLISH)
+
+    @Test
+    fun `swapped letters are corrected`() {
+        assertEquals("the", words.suggestions("teh", 3, qwerty).first())
+        assertEquals("keyboard", words.suggestions("keybaord", 3, qwerty).first())
+    }
+
+    @Test
+    fun `a missing, extra or wrong letter is corrected`() {
+        assertEquals("keyboard", words.suggestions("keyboad", 3, qwerty).first())
+        assertEquals("keyboard", words.suggestions("keyboaard", 3, qwerty).first())
+        assertEquals("hello", words.suggestions("hwllo", 3, qwerty).first())
+    }
+
+    @Test
+    fun `a correction spelled like the fixed text beats a longer, more frequent completion of it`() {
+        assertEquals(listOf("receive", "received"), words.suggestions("recieve", 3, qwerty).take(2))
+    }
+
+    @Test
+    fun `a word spelled as typed stays first`() {
+        assertEquals("ten", words.suggestions("ten", 3, qwerty).first())
+        assertEquals("then", words.suggestions("then", 3, qwerty).first())
+    }
+
+    @Test
+    fun `a neighbouring key makes a typo likelier`() {
+        // "tgen": g is next to h on QWERTY, so "then" is the likelier fix than "ten".
+        assertEquals("then", words.suggestions("tgen", 3, qwerty).first())
+        assertEquals("ten", words.suggestions("tgen", 3, null).first())
+    }
+
+    @Test
+    fun `missing accents are added`() {
+        assertEquals(listOf("päivä", "päivänä"), words.suggestions("paiva", 3, qwerty).take(2))
+    }
+
+    @Test
+    fun `short text gets completions but no corrections`() {
+        assertEquals(listOf("the", "then"), words.suggestions("th", 3, qwerty))
+        // "xh" is one typo from "th", but too short to look for typos.
+        assertEquals(emptyList<String>(), words.suggestions("xh", 3, qwerty))
+    }
+
+    @Test
+    fun `nothing close gives no suggestions`() {
+        assertEquals(emptyList<String>(), words.suggestions("zzzzz", 3, qwerty))
+        assertEquals(emptyList<String>(), words.suggestions("", 3, qwerty))
+    }
 }

@@ -57,6 +57,27 @@ class BundledDictionariesTest {
         assertTrue(english.completions("keyb", 3).contains("keyboard"))
     }
 
+    @Test
+    fun `common typos are corrected with the bundled lists`() {
+        val english = WordDictionary(wordsOf(KeyboardLayout.ENGLISH))
+        val qwerty = KeyboardLayout.ENGLISH.neighbours
+        mapOf("teh" to "the", "becuase" to "because", "tomorow" to "tomorrow", "wrok" to "work", "jsut" to "just")
+            .forEach { (typo, word) ->
+                assertEquals(typo, word, english.suggestions(typo, 3, qwerty).first())
+            }
+        val finnish = WordDictionary(wordsOf(KeyboardLayout.FINNISH))
+        assertEquals("päivä", finnish.suggestions("paiva", 3, KeyboardLayout.FINNISH.neighbours).first())
+        assertEquals("kiitos", finnish.suggestions("kiitso", 3, KeyboardLayout.FINNISH.neighbours).first())
+    }
+
+    @Test
+    fun `ordinary typing still gets completions first`() {
+        val english = WordDictionary(wordsOf(KeyboardLayout.ENGLISH))
+        val qwerty = KeyboardLayout.ENGLISH.neighbours
+        assertEquals("ten", english.suggestions("ten", 3, qwerty).first())
+        assertTrue(english.suggestions("keyb", 3, qwerty).contains("keyboard"))
+    }
+
     private companion object {
         const val MIN_WORDS = 10_000
     }
