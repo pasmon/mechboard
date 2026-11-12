@@ -18,4 +18,6 @@ object PrefsKeys {
     const val AUTO_CAPITALIZE = "auto_capitalize"
     /** Whether word suggestions are shown above the keys. Boolean, default true. */
     const val WORD_SUGGESTIONS = "word_suggestions"
+    /** Not a stored value: the settings row that opens the personal dictionary. */
+    const val PERSONAL_DICTIONARY = "personal_dictionary"
 }
