@@ -105,7 +105,11 @@ class SuggestionStripView @JvmOverloads constructor(
             }
             false
         }
-        setOnClickListener { listener?.onSuggestionPicked(text.toString()) }
+        // performClick() (used by accessibility services) runs this even on a
+        // disabled view, so check for an empty slot here too.
+        setOnClickListener {
+            if (isEnabled && text.isNotEmpty()) listener?.onSuggestionPicked(text.toString())
+        }
     }
 
     private fun divider() = View(context).apply {
