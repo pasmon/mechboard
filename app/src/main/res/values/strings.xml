@@ -13,6 +13,12 @@
     <string name="pref_auto_capitalize_title">Auto-capitalisation</string>
     <string name="pref_auto_capitalize_summary">Start sentences with a capital letter</string>
 
+    <string name="pref_word_suggestions_title">Word suggestions</string>
+    <string name="pref_word_suggestions_summary">Show word completions above the keys while typing</string>
+
+    <!-- What a screen reader announces for a word in the suggestion strip -->
+    <string name="suggestion_description">Suggestion: %1$s</string>
+
     <!-- What a screen reader announces for keys whose label is a symbol -->
     <string name="key_description_shift">Shift</string>
     <string name="key_description_shift_on">Shift on</string>

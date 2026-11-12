@@ -279,4 +279,92 @@ class TypingControllerTest {
         verify(ic).commitText("\n", 1)
         verify(ic, never()).performEditorAction(any())
     }
+
+    // ── word suggestions ─────────────────────────────────────────────────────
+
+    @Test
+    fun `the word at the cursor is the word that ends there`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello wor")
+        assertEquals("wor", typing.wordAtCursor())
+    }
+
+    @Test
+    fun `there is no word at the cursor inside a word or with a selection`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello wor")
+        whenever(ic.getTextAfterCursor(any(), any())).doReturn("ld")
+        assertEquals("", typing.wordAtCursor())
+
+        whenever(ic.getTextAfterCursor(any(), any())).doReturn(" ")
+        whenever(ic.getSelectedText(any())).doReturn("wor")
+        assertEquals("", typing.wordAtCursor())
+    }
+
+    @Test
+    fun `a word filling the whole look-behind is not completed`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("a".repeat(48))
+        assertEquals("", typing.wordAtCursor())
+    }
+
+    @Test
+    fun `picking a suggestion replaces the word and adds a space`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello wor", "Hello world ")
+        typing.pickSuggestion("world")
+        verify(ic).beginBatchEdit()
+        verify(ic).deleteSurroundingText(3, 0)
+        verify(ic).commitText("world ", 1)
+        verify(ic).endBatchEdit()
+    }
+
+    @Test
+    fun `picking a suggestion with no word at the cursor only inserts it`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello ", "Hello world ")
+        typing.pickSuggestion("world")
+        verify(ic, never()).deleteSurroundingText(any(), any())
+        verify(ic).commitText("world ", 1)
+    }
+
+    @Test
+    fun `punctuation after a picked suggestion takes the place of its space`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello wor", "Hello world ")
+        typing.pickSuggestion("world")
+        typing.onKey('.'.code)
+        verify(ic).deleteSurroundingText(1, 0)
+        verify(ic).commitText(". ", 1)
+    }
+
+    @Test
+    fun `punctuation is typed normally if the text changed since the pick`() {
+        whenever(ic.getTextBeforeCursor(any(), any()))
+            .doReturn("Hello wor", "Hello world ", "Elsewhere ")
+        typing.pickSuggestion("world")
+        typing.onKey(','.code)
+        verify(ic).commitText(",", 1)
+        verify(ic, never()).deleteSurroundingText(1, 0)
+    }
+
+    @Test
+    fun `punctuation is typed normally after another key`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello wor", "Hello world ")
+        typing.pickSuggestion("world")
+        typing.onKey(KeyCodes.SPACE)
+        typing.onKey('.'.code)
+        verify(ic).commitText(".", 1)
+        verify(ic, never()).deleteSurroundingText(1, 0)
+    }
+
+    @Test
+    fun `french keeps the space before an exclamation mark`() {
+        val french = TypingController(
+            connection = { ic },
+            editorInfo = { editorInfo },
+            autoCapitalize = { false },
+            onShiftStateChanged = {},
+            spaceSwappingPunctuation = { TypingController.FRENCH_SPACE_SWAPPING_PUNCTUATION }
+        )
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Bonjour mon", "Bonjour monde ")
+        french.pickSuggestion("monde")
+        french.onKey('!'.code)
+        verify(ic).commitText("!", 1)
+        verify(ic, never()).deleteSurroundingText(1, 0)
+    }
 }
