@@ -135,4 +135,20 @@ class WordDictionaryTest {
         assertEquals(emptyList<String>(), words.suggestions("zzzzz", 3, qwerty))
         assertEquals(emptyList<String>(), words.suggestions("", 3, qwerty))
     }
+
+    @Test
+    fun `the dictionary spelling is found ignoring case but not accents`() {
+        assertEquals("Haus", dictionary.spellingOf("HAUS"))
+        assertEquals("the", dictionary.spellingOf("The"))
+        assertEquals("hän", dictionary.spellingOf("Hän"))
+        assertEquals(null, dictionary.spellingOf("haen"))
+    }
+
+    @Test
+    fun `an exact spelling is preferred among case variants`() {
+        val variants = WordDictionary(listOf("bank", "Bank"))
+        assertEquals("Bank", variants.spellingOf("Bank"))
+        assertEquals("bank", variants.spellingOf("bank"))
+        assertEquals("bank", variants.spellingOf("BANK"))
+    }
 }

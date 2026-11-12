@@ -387,4 +387,31 @@ class TypingControllerTest {
         typing.onKey('x'.code)
         assertEquals(null, typing.pickedSuggestionIfUnchanged())
     }
+
+    @Test
+    fun `the previous word is read before the cursor`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("I went to ")
+        assertEquals("to", typing.previousWord())
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("I went to t")
+        assertEquals("to", typing.previousWord())
+    }
+
+    @Test
+    fun `there is no previous word with a selection or inside a word`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("I went to t")
+        whenever(ic.getTextAfterCursor(any(), any())).doReturn("he")
+        assertEquals("", typing.previousWord())
+        whenever(ic.getTextAfterCursor(any(), any())).doReturn(" ")
+        whenever(ic.getSelectedText(any())).doReturn("t")
+        assertEquals("", typing.previousWord())
+    }
+
+    @Test
+    fun `the finished word pair can skip the space a picked suggestion added`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("going home")
+        assertEquals("going" to "home", typing.finishedWordPair())
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("going home ")
+        assertEquals(null, typing.finishedWordPair())
+        assertEquals("going" to "home", typing.finishedWordPair(ignoreTrailingSpace = true))
+    }
 }

@@ -34,6 +34,7 @@ class MechboardService : InputMethodService(),
     private lateinit var soundManager: SoundManager
     private lateinit var prefs: SharedPreferences
     private lateinit var personalDictionary: PersonalDictionary
+    private lateinit var learnedPairs: LearnedWordPairs
 
     /**
      * A word the dictionaries did not know, just inserted from the strip as typed.
@@ -61,6 +62,8 @@ class MechboardService : InputMethodService(),
 
     /** The dictionary of [dictionaryLayout], or `null` while it loads or if it failed to load. */
     private var dictionary: WordDictionary? = null
+    /** Bundled next-word predictions of [dictionaryLayout], or `null` if it has none (or while loading). */
+    private var nextWords: NextWords? = null
     /** The layout whose dictionary is loaded or loading, or `null` when none is wanted. */
     private var dictionaryLayout: KeyboardLayout? = null
     /** Loads dictionaries off the main thread, one at a time. */
@@ -90,6 +93,7 @@ class MechboardService : InputMethodService(),
                 loadDictionaryIfWanted()
                 updateSuggestions()
             }
+            PrefsKeys.LEARN_WORD_PAIRS -> updateSuggestions()
         }
     }
 
@@ -105,6 +109,7 @@ class MechboardService : InputMethodService(),
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
         personalDictionary = PersonalDictionary.of(this)
         personalDictionary.addListener(personalDictionaryListener)
+        learnedPairs = LearnedWordPairs.of(this)
         loadDictionaryIfWanted()
     }
 
@@ -160,6 +165,11 @@ class MechboardService : InputMethodService(),
         updateSuggestions()
     }
 
+    override fun onFinishInput() {
+        super.onFinishInput()
+        saveLearnedPairs()
+    }
+
     override fun onFinishInputView(finishingInput: Boolean) {
         super.onFinishInputView(finishingInput)
         wordToOffer = null
@@ -184,6 +194,8 @@ class MechboardService : InputMethodService(),
         super.onDestroy()
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
         personalDictionary.removeListener(personalDictionaryListener)
+        // Write any learned pairs now: queued background work is dropped below.
+        learnedPairs.snapshotIfChanged()?.let { learnedPairs.writeSnapshot(it) }
         dictionaryLoader.shutdownNow()
         mainHandler.removeCallbacksAndMessages(null)
         soundManager.release()
@@ -204,6 +216,10 @@ class MechboardService : InputMethodService(),
     override fun onKey(code: Int, isRepeat: Boolean) {
         // The first event of a press already made its sound in onPress.
         if (isRepeat) soundManager.playKeySound(KeyKind.fromKeyCode(code))
+        // A space, line break or punctuation finishes the word before the cursor.
+        if (code == KeyCodes.SPACE || code == KeyCodes.ENTER || code in WORD_ENDING_PUNCTUATION) {
+            learnFinishedWord(typing.finishedWordPair())
+        }
         when (code) {
             KeyCodes.SETTINGS -> openSettings()
             KeyCodes.SYMBOLS  -> {
@@ -227,9 +243,11 @@ class MechboardService : InputMethodService(),
             StripItem.Kind.SUGGESTION -> {
                 wordToOffer = null
                 typing.pickSuggestion(item.word)
+                learnFinishedWord(typing.finishedWordPair(ignoreTrailingSpace = true))
             }
             StripItem.Kind.TYPED_WORD -> {
                 typing.pickSuggestion(item.word)
+                learnFinishedWord(typing.finishedWordPair(ignoreTrailingSpace = true))
                 val imeOptions = currentInputEditorInfo?.imeOptions ?: 0
                 wordToOffer = item.word.takeIf { WordSuggestions.fieldAllowsLearning(imeOptions) }
             }
@@ -279,10 +297,51 @@ class MechboardService : InputMethodService(),
             return
         }
         wordToOffer = null
-        suggestionStrip.items = WordSuggestions.stripFor(
-            typing.wordAtCursor(), dictionary, personalDictionary.asWordDictionary(),
-            currentLayout.neighbours
-        )
+        val word = typing.wordAtCursor()
+        val previous = typing.previousWord()
+        val learned = if (previous.isNotEmpty() && learningEnabled()) {
+            learnedPairs.after(currentLayout.id, previous, WordSuggestions.SLOT_COUNT)
+        } else {
+            emptyList()
+        }
+        val bundled = if (previous.isNotEmpty()) nextWords?.after(previous).orEmpty() else emptyList()
+        suggestionStrip.items = if (word.isEmpty()) {
+            // Nothing typed yet: predict the next word.
+            WordSuggestions.arrangeInSlots(
+                WordSuggestions.predictionsFor(learned, bundled, typing.shiftState)
+                    .map { StripItem(it, StripItem.Kind.SUGGESTION) }
+            )
+        } else {
+            WordSuggestions.stripFor(
+                word, dictionary, personalDictionary.asWordDictionary(),
+                currentLayout.neighbours, likelyNext = learned + bundled
+            )
+        }
+    }
+
+    private fun learningEnabled(): Boolean = prefs.getBoolean(PrefsKeys.LEARN_WORD_PAIRS, true)
+
+    /**
+     * Learns that the second word of [pair] followed the first, if learning is on
+     * and the field allows it. Only words in the bundled or personal dictionary
+     * are learned as next words, in their dictionary spelling, so typos are not.
+     */
+    private fun learnFinishedWord(pair: Pair<String, String>?) {
+        if (pair == null || !suggestionsEnabled() || !learningEnabled()) return
+        val info = currentInputEditorInfo ?: return
+        if (!WordSuggestions.fieldAllowsSuggestions(info.inputType)) return
+        if (!WordSuggestions.fieldAllowsLearning(info.imeOptions)) return
+        val (previous, word) = pair
+        val next = dictionary?.spellingOf(word)
+            ?: personalDictionary.words.firstOrNull { it.equals(word, ignoreCase = true) }
+            ?: return
+        learnedPairs.learn(currentLayout.id, previous, next)
+    }
+
+    /** Writes learned pairs that changed to storage, in the background. */
+    private fun saveLearnedPairs() {
+        val snapshot = learnedPairs.snapshotIfChanged() ?: return
+        dictionaryLoader.execute { learnedPairs.writeSnapshot(snapshot) }
     }
 
     private fun showToast(text: String) {
@@ -299,18 +358,28 @@ class MechboardService : InputMethodService(),
         if (wanted == dictionaryLayout) return
         dictionaryLayout = wanted
         dictionary = null
+        nextWords = null
         if (wanted == null) return
         dictionaryLoader.execute {
             val loaded = loadDictionary(wanted)
+            val loadedNextWords = loadNextWords(wanted)
             mainHandler.post {
                 // Ignore the result if the language changed while it loaded.
                 if (dictionaryLayout == wanted) {
                     dictionary = loaded
+                    nextWords = loadedNextWords
                     updateSuggestions()
                 }
             }
         }
     }
+
+    /** Reads the bundled next words of [layout]; `null` if it has none or they cannot be read. */
+    private fun loadNextWords(layout: KeyboardLayout): NextWords? = runCatching {
+        assets.open("dictionaries/${layout.id}_next.txt").bufferedReader().useLines {
+            NextWords.fromLines(it)
+        }
+    }.getOrNull()
 
     /** Reads the bundled word list of [layout]; `null` if there is none or it cannot be read. */
     private fun loadDictionary(layout: KeyboardLayout): WordDictionary? = runCatching {
@@ -399,5 +468,8 @@ class MechboardService : InputMethodService(),
 
     companion object {
         const val PREFS_NAME = "mechboard_prefs"
+
+        /** Punctuation that ends a word, for learning which word followed which. */
+        private val WORD_ENDING_PUNCTUATION = ".,!?:;".map { it.code }.toSet()
     }
 }

@@ -1,7 +1,10 @@
 package io.github.pasmon.mechboard
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.preference.ListPreference
+import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 
 /**
@@ -13,6 +16,7 @@ import androidx.preference.PreferenceFragmentCompat
  *  - Keyboard theme (Dark, Solarized Dark, Solarized Light, Dracula, Nord, Monokai)
  *  - Keyboard font (Default, JetBrains Mono, Share Tech Mono)
  *  - Word suggestions, and a link to the [PersonalDictionaryFragment]
+ *  - Learning next words from typing, and clearing what was learned
  *
  * Entries for all [ListPreference] widgets are derived at runtime from their
  * respective enums ([KeyboardLayout], [SoundProfile], [KeyboardTheme], and
@@ -27,6 +31,23 @@ class SettingsFragment : PreferenceFragmentCompat() {
         bindSoundProfileEntries()
         bindKeyboardThemeEntries()
         bindKeyboardFontEntries()
+        bindClearLearnedWords()
+    }
+
+    /** Clears the [LearnedWordPairs] after the user confirms. */
+    private fun bindClearLearnedWords() {
+        val pref = findPreference<Preference>(PrefsKeys.CLEAR_LEARNED_WORDS) ?: return
+        pref.setOnPreferenceClickListener {
+            AlertDialog.Builder(requireContext())
+                .setMessage(R.string.clear_learned_words_confirm)
+                .setPositiveButton(R.string.clear_learned_words_action) { _, _ ->
+                    LearnedWordPairs.of(requireContext()).clear()
+                    Toast.makeText(requireContext(), R.string.clear_learned_words_done, Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+            true
+        }
     }
 
     override fun onResume() {

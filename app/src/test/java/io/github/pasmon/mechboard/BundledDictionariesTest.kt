@@ -78,6 +78,28 @@ class BundledDictionariesTest {
         assertTrue(english.suggestions("keyb", 3, qwerty).contains("keyboard"))
     }
 
+    @Test
+    fun `english next words are well formed and use only listed words`() {
+        val known = wordsOf(KeyboardLayout.ENGLISH).toSet()
+        val lines = File("src/main/assets/dictionaries/english_next.txt").readLines(Charsets.UTF_8)
+        assertTrue("only ${lines.size} lines", lines.size >= MIN_WORDS)
+        lines.forEach { line ->
+            val words = line.split('\t')
+            assertTrue(line, words.size >= 2 && words.all { it in known })
+        }
+        val nextWords = NextWords.fromLines(lines.asSequence())
+        assertTrue(nextWords.after("to").contains("be"))
+        assertTrue(nextWords.after("thank").contains("you"))
+    }
+
+    @Test
+    fun `next words files belong to keyboard languages`() {
+        val ids = KeyboardLayout.values().map { it.id }.toSet()
+        File("src/main/assets/dictionaries").listFiles()!!
+            .filter { it.name.endsWith("_next.txt") }
+            .forEach { assertTrue(it.name, it.name.removeSuffix("_next.txt") in ids) }
+    }
+
     private companion object {
         const val MIN_WORDS = 10_000
     }
