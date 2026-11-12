@@ -151,6 +151,7 @@ keyboard dictionaries, with offensive and "never suggest" entries removed by
 | `finnish.txt` | Finnish | `main_fi.combined.gz` – "Suomi", v44, 2014-02-24 | as above (`fi_wordlist.combined.gz`) |
 | `german.txt` | German | `main_de.combined.gz` – "Deutsch", v54, 2014-10-31 | as above (`de_wordlist.combined.gz`) |
 | `french.txt` | French | `main_fr.combined.gz` – "Français", v54, 2014-10-31 | as above (`fr_wordlist.combined.gz`) |
+| `english_next.txt` | English (US) | the word pairs ("bigram" lines) of `main_en_US.combined.gz` above | as for `english.txt` |
 | `spanish.txt` | Spanish | `main_es.combined.gz` – "Español", v54, 2014-10-31 | as above (`es_wordlist.combined.gz`) |
 
 **License status: to be confirmed.** The lists' version numbers and dates match

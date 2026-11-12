@@ -88,6 +88,33 @@ class TypingController(
     }
 
     /**
+     * Returns the word before the one at the cursor (see [wordAtCursor]), or
+     * before the cursor when no word is being typed; see
+     * [WordSuggestions.previousWord]. Empty when there is none, the cursor is
+     * inside a word, or text is selected.
+     */
+    fun previousWord(): String {
+        val ic = connection() ?: return ""
+        if (!ic.getSelectedText(0).isNullOrEmpty()) return ""
+        val after = ic.getTextAfterCursor(1, 0)
+        if (after != null && WordSuggestions.continuesWord(after)) return ""
+        val before = ic.getTextBeforeCursor(PAIR_LOOKBEHIND, 0) ?: return ""
+        return WordSuggestions.previousWord(before)
+    }
+
+    /**
+     * Returns the previous word and the word that ends at the cursor, or `null`
+     * unless both exist; see [WordSuggestions.finishedWordPair]. With
+     * [ignoreTrailingSpace], one space right before the cursor is skipped, for
+     * reading a word that a picked suggestion just inserted.
+     */
+    fun finishedWordPair(ignoreTrailingSpace: Boolean = false): Pair<String, String>? {
+        val before = connection()?.getTextBeforeCursor(PAIR_LOOKBEHIND, 0) ?: return null
+        val text = if (ignoreTrailingSpace && before.endsWith(" ")) before.dropLast(1) else before
+        return WordSuggestions.finishedWordPair(text)
+    }
+
+    /**
      * Replaces the word at the cursor (see [wordAtCursor]) with [suggestion]
      * followed by a space, as when a suggestion is picked from the strip.
      */
@@ -218,6 +245,9 @@ class TypingController(
          * Words longer than this are not completed.
          */
         private const val WORD_LOOKBEHIND = 48
+
+        /** Room for two words and the spaces between them; see [previousWord]. */
+        private const val PAIR_LOOKBEHIND = 2 * WORD_LOOKBEHIND + 8
 
         /**
          * How many `char`s before the cursor to look at when deleting. Long enough

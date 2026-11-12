@@ -30,6 +30,15 @@
     <string name="personal_word_added">Added “%1$s” to your dictionary</string>
     <string name="personal_word_removed">Removed “%1$s” from your dictionary</string>
 
+    <!-- Next-word prediction learned from typing -->
+    <string name="pref_learn_word_pairs_title">Learn from your typing</string>
+    <string name="pref_learn_word_pairs_summary">Predict your next word from words you often type together. Stays on this phone, and nothing is learned in password or incognito fields.</string>
+    <string name="pref_clear_learned_words_title">Clear learned words</string>
+    <string name="pref_clear_learned_words_summary">Forget which words you type together</string>
+    <string name="clear_learned_words_confirm">Forget everything learned from your typing? Your personal dictionary is kept.</string>
+    <string name="clear_learned_words_action">Clear</string>
+    <string name="clear_learned_words_done">Learned words cleared</string>
+
     <!-- Personal dictionary -->
     <string name="pref_personal_dictionary_title">Personal dictionary</string>
     <string name="pref_personal_dictionary_summary">Words you saved for suggestions</string>

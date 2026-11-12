@@ -20,4 +20,8 @@ object PrefsKeys {
     const val WORD_SUGGESTIONS = "word_suggestions"
     /** Not a stored value: the settings row that opens the personal dictionary. */
     const val PERSONAL_DICTIONARY = "personal_dictionary"
+    /** Whether the keyboard learns which word follows which from typing. Boolean, default true. */
+    const val LEARN_WORD_PAIRS = "learn_word_pairs"
+    /** Not a stored value: the settings row that clears the learned word pairs. */
+    const val CLEAR_LEARNED_WORDS = "clear_learned_words"
 }

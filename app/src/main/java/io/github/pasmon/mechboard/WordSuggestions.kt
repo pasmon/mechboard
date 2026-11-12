@@ -45,6 +45,52 @@ object WordSuggestions {
         return textBefore.subSequence(start, textBefore.length).toString()
     }
 
+    /**
+     * Returns the word before the one being typed (or before the cursor, when no
+     * word is being typed), given the text before the cursor; an empty string if
+     * there is none. The two must be separated by spaces only: after a full stop,
+     * a comma or a line break there is no previous word to predict from.
+     *
+     * "I went to t" and "I went to " both give "to".
+     */
+    fun previousWord(textBefore: CharSequence): String {
+        val wordStart = textBefore.length - wordBeforeCursor(textBefore).length
+        var end = wordStart
+        while (end > 0 && textBefore[end - 1] == ' ') end--
+        if (end == wordStart) return ""
+        return wordBeforeCursor(textBefore.subSequence(0, end))
+    }
+
+    /**
+     * Returns the previous word and the word that ends at the cursor, given the
+     * text before the cursor, or `null` unless both exist. Called when a word has
+     * just been finished, to learn which word followed which.
+     */
+    fun finishedWordPair(textBefore: CharSequence): Pair<String, String>? {
+        val word = wordBeforeCursor(textBefore)
+        if (word.isEmpty()) return null
+        val previous = previousWord(textBefore)
+        return if (previous.isEmpty()) null else previous to word
+    }
+
+    /**
+     * Returns up to [SLOT_COUNT] predictions of the next word: words [learned]
+     * from the user's typing first, then [bundled] ones, each list best first.
+     * They take the case [shift] asks for: capitalised when shift is on, all
+     * capitals with caps lock.
+     */
+    fun predictionsFor(learned: List<String>, bundled: List<String>, shift: ShiftState): List<String> =
+        (learned + bundled)
+            .map { applyShift(it, shift) }
+            .distinctBy { it.lowercase(Locale.ROOT) }
+            .take(SLOT_COUNT)
+
+    private fun applyShift(word: String, shift: ShiftState): String = when (shift) {
+        ShiftState.OFF    -> word
+        ShiftState.ON     -> word.replaceFirstChar { it.titlecase(Locale.ROOT) }
+        ShiftState.LOCKED -> word.uppercase(Locale.ROOT)
+    }
+
     /** Whether the text after the cursor starts with part of a word, i.e. the cursor is inside one. */
     fun continuesWord(textAfter: CharSequence): Boolean =
         textAfter.isNotEmpty() && isLetterOrMark(textAfter[0])
@@ -54,8 +100,9 @@ object WordSuggestions {
      * the capitalisation of what was typed: "Hel" gives "Hello", "HEL" gives
      * "HELLO". Dictionary capitals are kept ("haus" gives "Haus").
      *
-     * A word spelled exactly as typed comes first, then completions from the
-     * [personal] dictionary, then suggestions from the bundled [dictionary], which
+     * A word spelled exactly as typed comes first, then words that often follow
+     * the previous word ([likelyNext], best first) and start with what was typed,
+     * then completions from the [personal] dictionary, then suggestions from the bundled [dictionary], which
      * include corrections of typos (see [WordDictionary.suggestions]); [neighbours]
      * are the current layout's, for telling likely typos. Either dictionary may be
      * `null` (not loaded, or not wanted).
@@ -64,14 +111,17 @@ object WordSuggestions {
         typed: String,
         dictionary: WordDictionary?,
         personal: WordDictionary? = null,
-        neighbours: KeyNeighbours? = null
+        neighbours: KeyNeighbours? = null,
+        likelyNext: List<String> = emptyList()
     ): List<String> {
         if (typed.isEmpty()) return emptyList()
         val own = personal?.completions(typed, SLOT_COUNT * 2).orEmpty()
         val bundled = dictionary?.suggestions(typed, SLOT_COUNT * 2, neighbours).orEmpty()
         val typedLower = typed.lowercase(Locale.ROOT)
         val exact = (own + bundled).filter { it.lowercase(Locale.ROOT) == typedLower }
-        return (exact + own + bundled)
+        val foldedTyped = WordDictionary.foldForLookup(typed)
+        val following = likelyNext.filter { WordDictionary.foldForLookup(it).startsWith(foldedTyped) }
+        return (exact + following + own + bundled)
             .map { matchCase(typed, it) }
             .distinct()
             .take(SLOT_COUNT)
@@ -86,15 +136,17 @@ object WordSuggestions {
      * typed, with the best suggestion (often a correction: "teh" → "the") in the
      * middle ([StripItem.Kind.TYPED_WORD]), so it can be inserted unchanged and
      * then saved. Whether a word is known can only be told once [dictionary] has
-     * loaded; until then the typed word is not offered.
+     * loaded; until then the typed word is not offered. [likelyNext] are words
+     * that often follow the previous word; see [suggestionsFor].
      */
     fun stripFor(
         typed: String,
         dictionary: WordDictionary?,
         personal: WordDictionary? = null,
-        neighbours: KeyNeighbours? = null
+        neighbours: KeyNeighbours? = null,
+        likelyNext: List<String> = emptyList()
     ): List<StripItem?> {
-        val suggestions = suggestionsFor(typed, dictionary, personal, neighbours)
+        val suggestions = suggestionsFor(typed, dictionary, personal, neighbours, likelyNext)
             .map { StripItem(it, StripItem.Kind.SUGGESTION) }
         val unknown = typed.isNotEmpty() && dictionary != null &&
             !dictionary.contains(typed) && personal?.contains(typed) != true

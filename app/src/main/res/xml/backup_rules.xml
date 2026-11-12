@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Backup rules for Android 11 and earlier (android:fullBackupContent).
+    The word pairs learned from typing stay on the phone; everything else,
+    including settings and the personal dictionary, is backed up.
+-->
+<full-backup-content>
+    <exclude domain="file" path="learned_word_pairs.txt" />
+    <exclude domain="file" path="learned_word_pairs.txt.tmp" />
+</full-backup-content>

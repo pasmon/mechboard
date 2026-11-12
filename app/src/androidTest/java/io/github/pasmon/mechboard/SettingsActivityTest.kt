@@ -78,4 +78,11 @@ class SettingsActivityTest {
         onView(withText(R.string.pref_personal_dictionary_title))
             .check(matches(isDisplayed()))
     }
+
+    @Test
+    fun learnFromTypingPreferenceIsDisplayed() {
+        scrollTo(PrefsKeys.LEARN_WORD_PAIRS)
+        onView(withText(R.string.pref_learn_word_pairs_title))
+            .check(matches(isDisplayed()))
+    }
 }

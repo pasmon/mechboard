@@ -203,4 +203,57 @@ class WordSuggestionsTest {
             EditorInfo.IME_ACTION_GO or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
         ))
     }
+
+    // ── next-word prediction ─────────────────────────────────────────────────
+
+    @Test
+    fun `the previous word is the one before the spaces`() {
+        assertEquals("to", WordSuggestions.previousWord("I went to "))
+        assertEquals("to", WordSuggestions.previousWord("I went to  "))
+        assertEquals("to", WordSuggestions.previousWord("I went to t"))
+        assertEquals("don't", WordSuggestions.previousWord("I don't k"))
+    }
+
+    @Test
+    fun `there is no previous word across punctuation, line breaks or none at all`() {
+        assertEquals("", WordSuggestions.previousWord("Hello. "))
+        assertEquals("", WordSuggestions.previousWord("Hello, w"))
+        assertEquals("", WordSuggestions.previousWord("Hello\nw"))
+        assertEquals("", WordSuggestions.previousWord("Hello"))
+        assertEquals("", WordSuggestions.previousWord(" "))
+        assertEquals("", WordSuggestions.previousWord(""))
+    }
+
+    @Test
+    fun `a finished word pair needs both words`() {
+        assertEquals("going" to "home", WordSuggestions.finishedWordPair("I am going home"))
+        assertEquals(null, WordSuggestions.finishedWordPair("home"))
+        assertEquals(null, WordSuggestions.finishedWordPair("going home "))
+        assertEquals(null, WordSuggestions.finishedWordPair("Hello. home"))
+    }
+
+    @Test
+    fun `predictions put learned words before bundled ones without repeats`() {
+        assertEquals(
+            listOf("home", "to", "out"),
+            WordSuggestions.predictionsFor(listOf("home", "to"), listOf("To", "out", "on"), ShiftState.OFF)
+        )
+    }
+
+    @Test
+    fun `predictions follow the shift state`() {
+        assertEquals(listOf("Be", "A"), WordSuggestions.predictionsFor(emptyList(), listOf("be", "a"), ShiftState.ON))
+        assertEquals(listOf("BE", "A"), WordSuggestions.predictionsFor(emptyList(), listOf("be", "a"), ShiftState.LOCKED))
+    }
+
+    @Test
+    fun `likely next words that fit what was typed come right after an exact match`() {
+        // After "going", "to" is likely; typing "t" puts it before the more frequent "the".
+        assertEquals(
+            listOf("to", "the", "they"),
+            WordSuggestions.suggestionsFor("t", WordDictionary(listOf("the", "they", "to")), likelyNext = listOf("to", "home"))
+        )
+        // Likely words that do not fit what was typed are not suggested.
+        assertFalse(WordSuggestions.suggestionsFor("t", dictionary, likelyNext = listOf("home")).contains("home"))
+    }
 }

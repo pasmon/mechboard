@@ -60,9 +60,21 @@ class WordDictionary(wordsByFrequency: List<String>) {
     val size: Int get() = words.size
 
     /** Whether [word] is in the dictionary, ignoring case but not accents. */
-    fun contains(word: String): Boolean {
+    fun contains(word: String): Boolean = spellingOf(word) != null
+
+    /**
+     * Returns how the dictionary spells [word], comparing without case but with
+     * accents ("HAUS" gives "Haus"), or `null` if it is not in the dictionary.
+     * An exact match is preferred when the dictionary has several spellings.
+     */
+    fun spellingOf(word: String): String? {
         val lower = word.lowercase(Locale.ROOT)
-        return entriesStartingWith(foldForLookup(word)).any { words[it].lowercase(Locale.ROOT) == lower }
+        var found: String? = null
+        for (i in entriesStartingWith(foldForLookup(word))) {
+            if (words[i] == word) return word
+            if (found == null && words[i].lowercase(Locale.ROOT) == lower) found = words[i]
+        }
+        return found
     }
 
     /**
