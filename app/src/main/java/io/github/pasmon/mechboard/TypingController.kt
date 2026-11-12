@@ -19,8 +19,20 @@ class TypingController(
     private val editorInfo: () -> EditorInfo?,
     /** Whether sentences should start with a capital letter where the field asks for it. */
     private val autoCapitalize: () -> Boolean,
-    private val onShiftStateChanged: (ShiftState) -> Unit
+    private val onShiftStateChanged: (ShiftState) -> Unit,
+    /**
+     * Code points of the punctuation that takes the place of the space a picked
+     * suggestion added ("word ." becomes "word. "). Depends on the language:
+     * French keeps a space before "!", "?", ":" and ";".
+     */
+    private val spaceSwappingPunctuation: () -> Set<Int> = { SPACE_SWAPPING_PUNCTUATION }
 ) {
+
+    /**
+     * The text before the cursor right after a suggestion was picked, until the
+     * next key; `null` otherwise. See [typePunctuationAfterSuggestion].
+     */
+    private var textAfterPickedSuggestion: String? = null
 
     var shiftState: ShiftState = ShiftState.OFF
         private set(value) {
@@ -39,12 +51,51 @@ class TypingController(
             return
         }
         val ic = connection() ?: return
+        val textAfterSuggestion = textAfterPickedSuggestion
+        textAfterPickedSuggestion = null
         when {
             code == KeyCodes.BACKSPACE -> deleteBackwards(ic)
             code == KeyCodes.ENTER     -> enter(ic)
-            code > 0                   -> typeCodePoint(ic, code)
+            code > 0                   -> {
+                if (textAfterSuggestion != null && code in spaceSwappingPunctuation()) {
+                    typePunctuationAfterSuggestion(ic, code, textAfterSuggestion)
+                } else {
+                    typeCodePoint(ic, code)
+                }
+            }
             else                       -> return
         }
+        updateShiftForCursor()
+    }
+
+    /**
+     * Returns the word that ends at the cursor, the one suggestions are offered
+     * for, or an empty string when there is none: nothing before the cursor is
+     * part of a word, the cursor is inside a word, or text is selected.
+     */
+    fun wordAtCursor(): String {
+        val ic = connection() ?: return ""
+        if (!ic.getSelectedText(0).isNullOrEmpty()) return ""
+        val after = ic.getTextAfterCursor(1, 0)
+        if (after != null && WordSuggestions.continuesWord(after)) return ""
+        val before = ic.getTextBeforeCursor(WORD_LOOKBEHIND, 0) ?: return ""
+        val word = WordSuggestions.wordBeforeCursor(before)
+        // A word filling the whole look-behind may have started before it.
+        return if (word.length >= WORD_LOOKBEHIND) "" else word
+    }
+
+    /**
+     * Replaces the word at the cursor (see [wordAtCursor]) with [suggestion]
+     * followed by a space, as when a suggestion is picked from the strip.
+     */
+    fun pickSuggestion(suggestion: String) {
+        val ic = connection() ?: return
+        val typed = wordAtCursor()
+        ic.beginBatchEdit()
+        if (typed.isNotEmpty()) ic.deleteSurroundingText(typed.length, 0)
+        ic.commitText("$suggestion ", 1)
+        ic.endBatchEdit()
+        textAfterPickedSuggestion = ic.getTextBeforeCursor(WORD_LOOKBEHIND, 0)?.toString()
         updateShiftForCursor()
     }
 
@@ -73,6 +124,29 @@ class TypingController(
         if (inputType and InputType.TYPE_MASK_CLASS != InputType.TYPE_CLASS_TEXT) return false
         val ic = connection() ?: return false
         return ic.getCursorCapsMode(inputType) != 0
+    }
+
+    /**
+     * Types punctuation such as "." or "," right after a picked suggestion, before
+     * the space the suggestion added: "word ." becomes "word. ".
+     *
+     * Only does so if the text before the cursor is still what the pick left
+     * behind ([textAfterSuggestion]); if the cursor has moved or the text was
+     * changed since, the punctuation is typed normally.
+     */
+    private fun typePunctuationAfterSuggestion(
+        ic: InputConnection, code: Int, textAfterSuggestion: String
+    ) {
+        val before = ic.getTextBeforeCursor(WORD_LOOKBEHIND, 0)?.toString()
+        if (before != textAfterSuggestion || !before.endsWith(" ")) {
+            typeCodePoint(ic, code)
+            return
+        }
+        ic.beginBatchEdit()
+        ic.deleteSurroundingText(1, 0)
+        ic.commitText(String(Character.toChars(code)) + " ", 1)
+        ic.endBatchEdit()
+        shiftState = shiftState.afterCharacter()
     }
 
     private fun typeCodePoint(ic: InputConnection, code: Int) {
@@ -117,11 +191,23 @@ class TypingController(
         shiftState = shiftState.afterCharacter()
     }
 
-    private companion object {
+    companion object {
+        /** Punctuation that takes the place of the space a picked suggestion added, in most languages. */
+        val SPACE_SWAPPING_PUNCTUATION: Set<Int> = ".,!?:;".map { it.code }.toSet()
+
+        /** [SPACE_SWAPPING_PUNCTUATION] for French, which keeps a space before "!", "?", ":" and ";". */
+        val FRENCH_SPACE_SWAPPING_PUNCTUATION: Set<Int> = ".,".map { it.code }.toSet()
+
+        /**
+         * How many `char`s before the cursor to look at for the word being typed.
+         * Words longer than this are not completed.
+         */
+        private const val WORD_LOOKBEHIND = 48
+
         /**
          * How many `char`s before the cursor to look at when deleting. Long enough
          * for the longest emoji sequences (a family emoji is 11 `char`s).
          */
-        const val GRAPHEME_LOOKBEHIND = 32
+        private const val GRAPHEME_LOOKBEHIND = 32
     }
 }

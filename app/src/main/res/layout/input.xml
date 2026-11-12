@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Root layout for the input view returned by MechboardService.onCreateInputView().
-    The keyboard view fills the bottom of the screen and is styled with the active
+    The suggestion strip sits above the keys. The keyboard view fills the bottom of the screen and is styled with the active
     keyboard theme palette, applied via ContextThemeWrapper at inflation time.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -9,6 +9,14 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/keyboardBgColor">
+
+    <!-- Word suggestions; hidden in fields that should not get any. -->
+    <io.github.pasmon.mechboard.SuggestionStripView
+        android:id="@+id/suggestion_strip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/keyboardBgColor"
+        android:visibility="gone" />
 
     <io.github.pasmon.mechboard.MechboardKeyboardView
         android:id="@+id/keyboard_view"

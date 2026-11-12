@@ -31,6 +31,13 @@
         android:summary="@string/pref_auto_capitalize_summary"
         android:defaultValue="true" />
 
+    <!-- Word completions above the keys -->
+    <SwitchPreferenceCompat
+        android:key="word_suggestions"
+        android:title="@string/pref_word_suggestions_title"
+        android:summary="@string/pref_word_suggestions_summary"
+        android:defaultValue="true" />
+
     <!-- Keyboard theme chooser -->
     <ListPreference
         android:key="keyboard_theme"

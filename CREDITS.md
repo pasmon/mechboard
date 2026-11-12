@@ -1,6 +1,6 @@
 # Audio Credits
 
-This file documents the origin and license of every audio asset bundled with Mechboard.
+This file documents the origin and license of every audio asset and word list bundled with Mechboard.
 
 ---
 
@@ -135,3 +135,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+---
+
+# Word List Credits
+
+The word lists in `app/src/main/assets/dictionaries/` are the 60,000 most
+frequent words of each language from the AOSP (Android Open Source Project)
+keyboard dictionaries, with offensive and "never suggest" entries removed by
+`scripts/wordlists/convert_wordlist.py`.
+
+| File | Language | Upstream word list | Source chain |
+|---|---|---|---|
+| `english.txt` | English (US) | `main_en_US.combined.gz` – "English (US)", v54, 2014-10-31 | AOSP LatinIME → [OpenBoard v1.4.5](https://github.com/openboard-team/openboard/blob/v1.4.5/dictionaries/en_wordlist.combined.gz) → HeliBoard's `aosp-dictionaries` repository (`wordlists/`, commit `8b479ff`) |
+| `finnish.txt` | Finnish | `main_fi.combined.gz` – "Suomi", v44, 2014-02-24 | as above (`fi_wordlist.combined.gz`) |
+| `german.txt` | German | `main_de.combined.gz` – "Deutsch", v54, 2014-10-31 | as above (`de_wordlist.combined.gz`) |
+| `french.txt` | French | `main_fr.combined.gz` – "Français", v54, 2014-10-31 | as above (`fr_wordlist.combined.gz`) |
+| `spanish.txt` | Spanish | `main_es.combined.gz` – "Español", v54, 2014-10-31 | as above (`es_wordlist.combined.gz`) |
+
+**License status: to be confirmed.** The lists' version numbers and dates match
+the dictionaries Google shipped with AOSP LatinIME, which AOSP distributes under
+the Apache License 2.0. OpenBoard and HeliBoard, which republish them, are
+GPL-3.0 projects and do not state a separate license for the word lists. Confirm
+the license before a release that bundles them.

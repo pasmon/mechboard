@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.inputmethodservice.InputMethodService
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
@@ -12,17 +14,22 @@ import android.view.inputmethod.EditorInfo
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
  * The mechboard [InputMethodService].
  *
  * Shows a [MechboardKeyboardView], plays a mechanical key-click sound through
  * [SoundManager] on every key press, edits the text field through
- * [TypingController], and provides a dedicated key to open [SettingsActivity].
+ * [TypingController], offers word completions in a [SuggestionStripView], and
+ * provides a dedicated key to open [SettingsActivity].
  */
-class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
+class MechboardService : InputMethodService(),
+    MechboardKeyboardView.Listener, SuggestionStripView.Listener {
 
     private lateinit var keyboardView: MechboardKeyboardView
+    private lateinit var suggestionStrip: SuggestionStripView
     private lateinit var soundManager: SoundManager
     private lateinit var prefs: SharedPreferences
 
@@ -32,8 +39,23 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
         autoCapitalize = { prefs.getBoolean(PrefsKeys.AUTO_CAPITALIZE, true) },
         onShiftStateChanged = { state ->
             if (::keyboardView.isInitialized) keyboardView.shiftState = state
+        },
+        spaceSwappingPunctuation = {
+            if (currentLayout == KeyboardLayout.FRENCH) {
+                TypingController.FRENCH_SPACE_SWAPPING_PUNCTUATION
+            } else {
+                TypingController.SPACE_SWAPPING_PUNCTUATION
+            }
         }
     )
+
+    /** The dictionary of [dictionaryLayout], or `null` while it loads or if it failed to load. */
+    private var dictionary: WordDictionary? = null
+    /** The layout whose dictionary is loaded or loading, or `null` when none is wanted. */
+    private var dictionaryLayout: KeyboardLayout? = null
+    /** Loads dictionaries off the main thread, one at a time. */
+    private val dictionaryLoader: ExecutorService = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     /** The language layout selected in [SettingsActivity]. */
     private var currentLayout = KeyboardLayout.ENGLISH
@@ -47,10 +69,17 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
      */
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         when (key) {
-            PrefsKeys.KEYBOARD_LAYOUT -> applyLayoutFromPrefs()
-            PrefsKeys.KEYBOARD_THEME  -> if (::keyboardView.isInitialized) setInputView(onCreateInputView())
-            PrefsKeys.KEYBOARD_FONT   -> applyFontFromPrefs()
-            PrefsKeys.AUTO_CAPITALIZE -> typing.updateShiftForCursor()
+            PrefsKeys.KEYBOARD_LAYOUT  -> applyLayoutFromPrefs()
+            PrefsKeys.KEYBOARD_THEME   -> if (::keyboardView.isInitialized) {
+                setInputView(onCreateInputView())
+                updateSuggestions()
+            }
+            PrefsKeys.KEYBOARD_FONT    -> applyFontFromPrefs()
+            PrefsKeys.AUTO_CAPITALIZE  -> typing.updateShiftForCursor()
+            PrefsKeys.WORD_SUGGESTIONS -> {
+                loadDictionaryIfWanted()
+                updateSuggestions()
+            }
         }
     }
 
@@ -64,6 +93,7 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
         currentLayout = layoutFromPrefs()
         soundManager = SoundManager(this, prefs)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
+        loadDictionaryIfWanted()
     }
 
     override fun onCreateInputView(): View {
@@ -80,6 +110,8 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
         keyboardView = rootView.findViewById(R.id.keyboard_view)
         keyboardView.listener = this
         keyboardView.shiftState = typing.shiftState
+        suggestionStrip = rootView.findViewById(R.id.suggestion_strip)
+        suggestionStrip.listener = this
         showCurrentKeyboard()
         applyFontFromPrefs()
         keepClearOfSystemBars(rootView)
@@ -113,6 +145,12 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
             typing.resetShift()
         }
         typing.updateShiftForCursor()
+        updateSuggestions()
+    }
+
+    override fun onFinishInputView(finishingInput: Boolean) {
+        super.onFinishInputView(finishingInput)
+        if (::suggestionStrip.isInitialized) suggestionStrip.suggestions = emptyList()
     }
 
     override fun onUpdateSelection(
@@ -123,13 +161,17 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
         super.onUpdateSelection(
             oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd
         )
-        // The cursor moved, possibly to or from the start of a sentence.
+        // The text or the cursor changed: the cursor may be at the start of a
+        // sentence, and the word being typed is different.
         typing.updateShiftForCursor()
+        updateSuggestions()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
+        dictionaryLoader.shutdownNow()
+        mainHandler.removeCallbacksAndMessages(null)
         soundManager.release()
     }
 
@@ -159,8 +201,73 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
     }
 
     // -------------------------------------------------------------------------
+    // SuggestionStripView.Listener
+    // -------------------------------------------------------------------------
+
+    override fun onSuggestionPress() {
+        soundManager.playKeySound(KeyKind.CHARACTER)
+    }
+
+    override fun onSuggestionPicked(word: String) {
+        typing.pickSuggestion(word)
+    }
+
+    // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    private fun suggestionsEnabled(): Boolean = prefs.getBoolean(PrefsKeys.WORD_SUGGESTIONS, true)
+
+    /**
+     * Shows the strip with suggestions for the word at the cursor, or hides it
+     * when suggestions are off or the current field should not get any.
+     */
+    private fun updateSuggestions() {
+        if (!::suggestionStrip.isInitialized) return
+        val inputType = currentInputEditorInfo?.inputType ?: InputType.TYPE_NULL
+        if (!suggestionsEnabled() || !WordSuggestions.fieldAllowsSuggestions(inputType)) {
+            suggestionStrip.visibility = View.GONE
+            suggestionStrip.suggestions = emptyList()
+            return
+        }
+        suggestionStrip.visibility = View.VISIBLE
+        val dictionary = dictionary
+        suggestionStrip.suggestions = if (dictionary == null) {
+            emptyList()
+        } else {
+            WordSuggestions.suggestionsFor(typing.wordAtCursor(), dictionary)
+        }
+    }
+
+    /**
+     * Starts loading the dictionary of [currentLayout] in the background if
+     * suggestions are on and it is not loaded yet, or drops the dictionary if
+     * suggestions are off. The strip is updated once loading finishes.
+     */
+    private fun loadDictionaryIfWanted() {
+        val wanted = if (suggestionsEnabled()) currentLayout else null
+        if (wanted == dictionaryLayout) return
+        dictionaryLayout = wanted
+        dictionary = null
+        if (wanted == null) return
+        dictionaryLoader.execute {
+            val loaded = loadDictionary(wanted)
+            mainHandler.post {
+                // Ignore the result if the language changed while it loaded.
+                if (dictionaryLayout == wanted) {
+                    dictionary = loaded
+                    updateSuggestions()
+                }
+            }
+        }
+    }
+
+    /** Reads the bundled word list of [layout]; `null` if there is none or it cannot be read. */
+    private fun loadDictionary(layout: KeyboardLayout): WordDictionary? = runCatching {
+        assets.open("dictionaries/${layout.id}.txt").bufferedReader().useLines {
+            WordDictionary.fromLines(it)
+        }
+    }.getOrNull()
 
     /** Shows the symbols keyboard or the current language's letters, per [isSymbolsMode]. */
     private fun showCurrentKeyboard() {
@@ -191,6 +298,8 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
         currentLayout = layoutFromPrefs()
         isSymbolsMode = false
         showCurrentKeyboard()
+        loadDictionaryIfWanted()
+        updateSuggestions()
     }
 
     /**
@@ -220,7 +329,9 @@ class MechboardService : InputMethodService(), MechboardKeyboardView.Listener {
         if (!::keyboardView.isInitialized) return
         val fontId = prefs.getString(PrefsKeys.KEYBOARD_FONT, KeyboardFont.DEFAULT.id)
             ?: KeyboardFont.DEFAULT.id
-        keyboardView.labelTypeface = resolveTypeface(KeyboardFont.fromId(fontId))
+        val typeface = resolveTypeface(KeyboardFont.fromId(fontId))
+        keyboardView.labelTypeface = typeface
+        suggestionStrip.labelTypeface = typeface
     }
 
     /**
