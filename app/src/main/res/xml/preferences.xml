@@ -38,6 +38,14 @@
         android:summary="@string/pref_word_suggestions_summary"
         android:defaultValue="true" />
 
+    <!-- Opt-in: a space or punctuation corrects a clear typo -->
+    <SwitchPreferenceCompat
+        android:key="autocorrect"
+        android:title="@string/pref_autocorrect_title"
+        android:summary="@string/pref_autocorrect_summary"
+        android:defaultValue="false"
+        android:dependency="word_suggestions" />
+
     <!-- Opens PersonalDictionaryFragment: the words the user saved -->
     <Preference
         android:key="personal_dictionary"

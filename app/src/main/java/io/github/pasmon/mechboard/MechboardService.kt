@@ -93,7 +93,7 @@ class MechboardService : InputMethodService(),
                 loadDictionaryIfWanted()
                 updateSuggestions()
             }
-            PrefsKeys.LEARN_WORD_PAIRS -> updateSuggestions()
+            PrefsKeys.LEARN_WORD_PAIRS, PrefsKeys.AUTOCORRECT -> updateSuggestions()
         }
     }
 
@@ -159,7 +159,7 @@ class MechboardService : InputMethodService(),
             // A new field: start on the keyboard that suits what it asks for.
             isSymbolsMode = wantsSymbolsFirst(info)
             showCurrentKeyboard()
-            typing.resetShift()
+            typing.startField()
         }
         typing.updateShiftForCursor()
         updateSuggestions()
@@ -218,7 +218,14 @@ class MechboardService : InputMethodService(),
         if (isRepeat) soundManager.playKeySound(KeyKind.fromKeyCode(code))
         // A space, line break or punctuation finishes the word before the cursor.
         if (code == KeyCodes.SPACE || code == KeyCodes.ENTER || code in WORD_ENDING_PUNCTUATION) {
-            learnFinishedWord(typing.finishedWordPair())
+            val pair = typing.finishedWordPair()
+            val correction = if (code == KeyCodes.ENTER) null else autocorrectionAtCursor()
+            if (correction != null) {
+                learnFinishedWord(pair?.let { it.first to correction.second })
+                typing.autocorrectAndType(correction.first, correction.second, code)
+                return
+            }
+            learnFinishedWord(pair)
         }
         when (code) {
             KeyCodes.SETTINGS -> openSettings()
@@ -240,7 +247,7 @@ class MechboardService : InputMethodService(),
 
     override fun onSuggestionPicked(item: StripItem) {
         when (item.kind) {
-            StripItem.Kind.SUGGESTION -> {
+            StripItem.Kind.SUGGESTION, StripItem.Kind.AUTOCORRECTION -> {
                 wordToOffer = null
                 typing.pickSuggestion(item.word)
                 learnFinishedWord(typing.finishedWordPair(ignoreTrailingSpace = true))
@@ -263,7 +270,7 @@ class MechboardService : InputMethodService(),
 
     /** Holding down a word from the personal dictionary removes it from there. */
     override fun onSuggestionLongPressed(item: StripItem): Boolean {
-        if (item.kind != StripItem.Kind.SUGGESTION) return false
+        if (item.kind != StripItem.Kind.SUGGESTION && item.kind != StripItem.Kind.AUTOCORRECTION) return false
         // The strip shows the word in the case that was typed; find the saved spelling.
         val saved = personalDictionary.words.firstOrNull { it.equals(item.word, ignoreCase = true) }
             ?: return false
@@ -314,9 +321,28 @@ class MechboardService : InputMethodService(),
         } else {
             WordSuggestions.stripFor(
                 word, dictionary, personalDictionary.asWordDictionary(),
-                currentLayout.neighbours, likelyNext = learned + bundled
+                currentLayout.neighbours, likelyNext = learned + bundled,
+                autocorrection = autocorrectionAtCursor()?.second
             )
         }
+    }
+
+    private fun autocorrectEnabled(): Boolean = prefs.getBoolean(PrefsKeys.AUTOCORRECT, false)
+
+    /**
+     * Returns the word at the cursor and what a space would correct it to, or
+     * `null` if it would be left alone; see [WordSuggestions.autocorrectionFor].
+     */
+    private fun autocorrectionAtCursor(): Pair<String, String>? {
+        if (!suggestionsEnabled() || !autocorrectEnabled()) return null
+        val info = currentInputEditorInfo ?: return null
+        if (!WordSuggestions.fieldAllowsAutocorrect(info.inputType)) return null
+        val word = typing.wordAtCursor()
+        if (word.isEmpty() || typing.isAutocorrectionRejected(word)) return null
+        val correction = WordSuggestions.autocorrectionFor(
+            word, dictionary, personalDictionary.asWordDictionary(), currentLayout.neighbours
+        ) ?: return null
+        return word to correction
     }
 
     private fun learningEnabled(): Boolean = prefs.getBoolean(PrefsKeys.LEARN_WORD_PAIRS, true)

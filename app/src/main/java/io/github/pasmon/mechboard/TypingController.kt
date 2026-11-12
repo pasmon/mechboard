@@ -4,6 +4,7 @@ import android.text.InputType
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import java.util.Locale
 
 /**
  * Turns key codes into edits of the text field the keyboard is attached to,
@@ -37,6 +38,20 @@ class TypingController(
     /** The suggestion picked last, valid while [textAfterPickedSuggestion] is set. */
     private var pickedSuggestion: String? = null
 
+    /** What [autocorrectAndType] changed, until the next key; see [undoAutocorrection]. */
+    private var lastAutocorrection: Autocorrection? = null
+
+    private class Autocorrection(
+        val typed: String,
+        val correction: String,
+        val separator: String,
+        /** The text before the cursor right after the correction and separator. */
+        val textAfter: String?
+    )
+
+    /** Words, in lower case, whose autocorrection was undone in this field; not corrected again. */
+    private val rejectedCorrections = mutableSetOf<String>()
+
     var shiftState: ShiftState = ShiftState.OFF
         private set(value) {
             if (field == value) return
@@ -56,6 +71,12 @@ class TypingController(
         val ic = connection() ?: return
         val textAfterSuggestion = textAfterPickedSuggestion
         textAfterPickedSuggestion = null
+        val autocorrection = lastAutocorrection
+        lastAutocorrection = null
+        if (code == KeyCodes.BACKSPACE && autocorrection != null && undoAutocorrection(ic, autocorrection)) {
+            updateShiftForCursor()
+            return
+        }
         when {
             code == KeyCodes.BACKSPACE -> deleteBackwards(ic)
             code == KeyCodes.ENTER     -> enter(ic)
@@ -139,6 +160,54 @@ class TypingController(
         val expected = textAfterPickedSuggestion ?: return null
         val before = connection()?.getTextBeforeCursor(WORD_LOOKBEHIND, 0)?.toString()
         return if (before == expected) pickedSuggestion else null
+    }
+
+    /**
+     * Replaces the word at the cursor, [typed], with [correction], then types
+     * [code] (a space or punctuation) as [onKey] would. A backspace right after
+     * undoes the correction; see [undoAutocorrection].
+     */
+    fun autocorrectAndType(typed: String, correction: String, code: Int) {
+        val ic = connection() ?: return
+        ic.beginBatchEdit()
+        ic.deleteSurroundingText(typed.length, 0)
+        ic.commitText(correction, 1)
+        ic.endBatchEdit()
+        onKey(code)
+        lastAutocorrection = Autocorrection(
+            typed, correction, String(Character.toChars(code)),
+            ic.getTextBeforeCursor(WORD_LOOKBEHIND, 0)?.toString()
+        )
+    }
+
+    /** Whether the autocorrection of [word] was undone in this field, so it should be left alone. */
+    fun isAutocorrectionRejected(word: String): Boolean = word.lowercase(Locale.ROOT) in rejectedCorrections
+
+    /**
+     * Puts back the word [autocorrection] replaced, keeping the separator
+     * ("the " becomes "teh "), if the text before the cursor is still what the
+     * correction left behind. Returns whether it did.
+     */
+    private fun undoAutocorrection(ic: InputConnection, autocorrection: Autocorrection): Boolean {
+        val before = ic.getTextBeforeCursor(WORD_LOOKBEHIND, 0)?.toString()
+        if (before == null || before != autocorrection.textAfter) return false
+        ic.beginBatchEdit()
+        ic.deleteSurroundingText(autocorrection.correction.length + autocorrection.separator.length, 0)
+        ic.commitText(autocorrection.typed + autocorrection.separator, 1)
+        ic.endBatchEdit()
+        rejectedCorrections += autocorrection.typed.lowercase(Locale.ROOT)
+        return true
+    }
+
+    /**
+     * Forgets everything about the previous field: shift, caps lock, picked
+     * suggestions and autocorrections. Call when a new field gains focus.
+     */
+    fun startField() {
+        resetShift()
+        textAfterPickedSuggestion = null
+        lastAutocorrection = null
+        rejectedCorrections.clear()
     }
 
     /** Forgets a pending one-letter shift or caps lock, e.g. when a new field gains focus. */

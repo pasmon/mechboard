@@ -3,6 +3,7 @@ package io.github.pasmon.mechboard
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.StateListDrawable
@@ -22,7 +23,7 @@ import android.widget.TextView
  * laid out by [WordSuggestions.stripFor]. A word as typed is shown in quotes and
  * an offer to save a word with a "+". Taps and long presses are reported to
  * [listener]. Colours come from the active keyboard theme, like
- * [MechboardKeyboardView].
+ * [MechboardKeyboardView]. The correction a space will make is underlined.
  */
 class SuggestionStripView @JvmOverloads constructor(
     context: Context,
@@ -56,17 +57,24 @@ class SuggestionStripView @JvmOverloads constructor(
                 slots[i].text = item?.let { label(it) } ?: ""
                 slots[i].isEnabled = item != null
                 slots[i].contentDescription = item?.let { description(it) }
+                // Underline the correction a space will make.
+                slots[i].paintFlags = if (item?.kind == StripItem.Kind.AUTOCORRECTION) {
+                    slots[i].paintFlags or Paint.UNDERLINE_TEXT_FLAG
+                } else {
+                    slots[i].paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
+                }
             }
         }
 
     private fun label(item: StripItem): String = when (item.kind) {
-        StripItem.Kind.SUGGESTION -> item.word
+        StripItem.Kind.SUGGESTION, StripItem.Kind.AUTOCORRECTION -> item.word
         StripItem.Kind.TYPED_WORD -> context.getString(R.string.suggestion_typed_word, item.word)
         StripItem.Kind.SAVE_WORD  -> context.getString(R.string.suggestion_save_word, item.word)
     }
 
     private fun description(item: StripItem): String = when (item.kind) {
         StripItem.Kind.SUGGESTION -> context.getString(R.string.suggestion_description, item.word)
+        StripItem.Kind.AUTOCORRECTION -> context.getString(R.string.suggestion_autocorrection_description, item.word)
         StripItem.Kind.TYPED_WORD -> context.getString(R.string.suggestion_typed_word_description, item.word)
         StripItem.Kind.SAVE_WORD  -> context.getString(R.string.suggestion_save_word_description, item.word)
     }
@@ -151,6 +159,10 @@ class SuggestionStripView @JvmOverloads constructor(
 
     /** Test access to the text shown in each slot, left to right. */
     internal val slotTexts: List<String> get() = slots.map { it.text.toString() }
+
+    /** Test access to whether each slot is underlined, left to right. */
+    internal val slotUnderlines: List<Boolean>
+        get() = slots.map { it.paintFlags and Paint.UNDERLINE_TEXT_FLAG != 0 }
 
     /** Test access: taps the slot at [index], left to right. */
     internal fun clickSlot(index: Int) {

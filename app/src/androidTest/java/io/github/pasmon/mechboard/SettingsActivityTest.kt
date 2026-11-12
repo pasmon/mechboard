@@ -85,4 +85,11 @@ class SettingsActivityTest {
         onView(withText(R.string.pref_learn_word_pairs_title))
             .check(matches(isDisplayed()))
     }
+
+    @Test
+    fun autocorrectPreferenceIsDisplayed() {
+        scrollTo(PrefsKeys.AUTOCORRECT)
+        onView(withText(R.string.pref_autocorrect_title))
+            .check(matches(isDisplayed()))
+    }
 }

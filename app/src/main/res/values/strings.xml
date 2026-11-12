@@ -23,12 +23,17 @@
 
     <!-- What a screen reader announces for the slots of the suggestion strip -->
     <string name="suggestion_description">Suggestion: %1$s</string>
+    <string name="suggestion_autocorrection_description">Space corrects to: %1$s</string>
     <string name="suggestion_typed_word_description">Keep as typed: %1$s</string>
     <string name="suggestion_save_word_description">Add %1$s to your dictionary</string>
 
     <!-- Shown briefly after a word is saved to or removed from the personal dictionary -->
     <string name="personal_word_added">Added “%1$s” to your dictionary</string>
     <string name="personal_word_removed">Removed “%1$s” from your dictionary</string>
+
+    <!-- Autocorrect -->
+    <string name="pref_autocorrect_title">Autocorrect</string>
+    <string name="pref_autocorrect_summary">A space or punctuation fixes a clear typo, as underlined in the suggestions. Backspace right after undoes it.</string>
 
     <!-- Next-word prediction learned from typing -->
     <string name="pref_learn_word_pairs_title">Learn from your typing</string>
