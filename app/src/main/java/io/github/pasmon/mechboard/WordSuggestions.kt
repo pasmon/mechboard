@@ -54,18 +54,21 @@ object WordSuggestions {
      * the capitalisation of what was typed: "Hel" gives "Hello", "HEL" gives
      * "HELLO". Dictionary capitals are kept ("haus" gives "Haus").
      *
-     * A word spelled exactly as typed comes first, then words from the [personal]
-     * dictionary, then words from the bundled [dictionary]. Either may be `null`
-     * (not loaded, or not wanted).
+     * A word spelled exactly as typed comes first, then completions from the
+     * [personal] dictionary, then suggestions from the bundled [dictionary], which
+     * include corrections of typos (see [WordDictionary.suggestions]); [neighbours]
+     * are the current layout's, for telling likely typos. Either dictionary may be
+     * `null` (not loaded, or not wanted).
      */
     fun suggestionsFor(
         typed: String,
         dictionary: WordDictionary?,
-        personal: WordDictionary? = null
+        personal: WordDictionary? = null,
+        neighbours: KeyNeighbours? = null
     ): List<String> {
         if (typed.isEmpty()) return emptyList()
         val own = personal?.completions(typed, SLOT_COUNT * 2).orEmpty()
-        val bundled = dictionary?.completions(typed, SLOT_COUNT * 2).orEmpty()
+        val bundled = dictionary?.suggestions(typed, SLOT_COUNT * 2, neighbours).orEmpty()
         val typedLower = typed.lowercase(Locale.ROOT)
         val exact = (own + bundled).filter { it.lowercase(Locale.ROOT) == typedLower }
         return (exact + own + bundled)
@@ -80,16 +83,18 @@ object WordSuggestions {
      * thumb finds it.
      *
      * When neither dictionary knows the typed word, it takes the left slot as
-     * typed ([StripItem.Kind.TYPED_WORD]), so it can be inserted unchanged and
+     * typed, with the best suggestion (often a correction: "teh" → "the") in the
+     * middle ([StripItem.Kind.TYPED_WORD]), so it can be inserted unchanged and
      * then saved. Whether a word is known can only be told once [dictionary] has
      * loaded; until then the typed word is not offered.
      */
     fun stripFor(
         typed: String,
         dictionary: WordDictionary?,
-        personal: WordDictionary? = null
+        personal: WordDictionary? = null,
+        neighbours: KeyNeighbours? = null
     ): List<StripItem?> {
-        val suggestions = suggestionsFor(typed, dictionary, personal)
+        val suggestions = suggestionsFor(typed, dictionary, personal, neighbours)
             .map { StripItem(it, StripItem.Kind.SUGGESTION) }
         val unknown = typed.isNotEmpty() && dictionary != null &&
             !dictionary.contains(typed) && personal?.contains(typed) != true

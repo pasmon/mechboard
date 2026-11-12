@@ -16,7 +16,8 @@
 | `TypingController` | Turns key codes into edits of the text field: characters, backspace, enter, shift / caps lock (`ShiftState`), auto-capitalisation, picking a suggestion |
 | `SuggestionStripView` | Row of three word suggestions above the keys |
 | `WordSuggestions` | Pure rules for suggestions: word at the cursor, case matching, slot order, which fields get suggestions |
-| `WordDictionary` | One language's words ranked by frequency; case- and accent-insensitive prefix lookup |
+| `WordDictionary` | One language's words ranked by frequency; case- and accent-insensitive prefix lookup; `suggestions()` also corrects one typo |
+| `KeyNeighbours` | Neighbouring letter keys of a layout (`KeyboardLayout.neighbours`), for weighting typos |
 | `PersonalDictionary` | User-saved words in an app-private file; one shared instance (`PersonalDictionary.of`) with change listeners |
 | `PersonalDictionaryFragment` | Settings screen to list, add and delete saved words |
 | `SoundManager` | Loads sound samples per profile, picks the sample for each key (`KeyKind`), applies `SoundVariation`, reads/writes preferences, exposes `playKeySound(kind)` |

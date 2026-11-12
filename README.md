@@ -30,7 +30,7 @@ A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound ef
 - ⚙️ **In-keyboard settings key** — opens the settings screen without leaving the current app
 - 🔠 **Shift and caps lock** — tap ⇧ for one capital letter, tap it again for caps lock; sentences start with a capital automatically in fields that ask for it
 - 🔢 **Digits without switching keyboards** — hold a top-row key for its digit; number fields open on the digits keyboard
-- 💬 **Word suggestions** — completions of the word you are typing appear above the keys; tap one to insert it. Works offline from a bundled word list per language, and is off in password, e-mail, web-address and number fields
+- 💬 **Word suggestions** — completions of the word you are typing appear above the keys; tap one to insert it. Typos are forgiven too: "teh" suggests "the", "becuase" "because", and a letter hit on a neighbouring key counts as a likely slip. Nothing is replaced unless you tap it. Works offline from a bundled word list per language, and is off in password, e-mail, web-address and number fields
 - 📖 **Personal dictionary** — a word the dictionary does not know appears in quotes on the left of the strip; tap it to keep it as typed, then tap **+ word** to save it. Saved words are suggested in every language; hold one down in the strip to remove it, or manage the list in settings. Nothing is saved from fields that ask the keyboard not to learn (such as incognito tabs)
 - 🌍 **Five languages** — English, Finnish, German, French and Spanish layouts
 - 🎨 **Six colour themes** (dark by default) and **three key fonts**
@@ -100,7 +100,8 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | `TypingController` | Turns key codes into edits of the text field: characters, backspace, enter, shift / caps lock (`ShiftState`), auto-capitalisation, and replacing the word at the cursor with a picked suggestion |
 | `SuggestionStripView` | The row of three slots above the keys: suggestions, a word as typed, or the offer to save it |
 | `WordSuggestions` | Rules behind the strip: the word at the cursor, ranking personal and bundled words, matching capitalisation, slot contents, and which fields get suggestions or may learn words |
-| `WordDictionary` | One language's words, ranked by frequency, with case- and accent-insensitive prefix lookup |
+| `WordDictionary` | One language's words, ranked by frequency, with case- and accent-insensitive prefix lookup, and suggestions that also correct one typo (scored by word frequency plus typo cost) |
+| `KeyNeighbours` | Which letter keys of a layout are next to each other, so that hitting a neighbouring key counts as a likelier typo |
 | `PersonalDictionary` | The words the user saved, in `files/personal_dictionary.txt`; shared by the keyboard and the settings screen, which hear each other's changes |
 | `PersonalDictionaryFragment` | Settings screen listing the saved words, with add and delete |
 | `SoundManager` | Loads short sound effects (WAV/MP3/OGG) per profile, picks the sample for each key, reads/writes preferences, exposes `playKeySound(kind)` |

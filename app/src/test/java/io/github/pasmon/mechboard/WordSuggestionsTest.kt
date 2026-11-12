@@ -150,7 +150,12 @@ class WordSuggestionsTest {
     @Test
     fun `an unknown word is offered as typed on the left`() {
         assertEquals(
-            listOf(StripItem("Hels", StripItem.Kind.TYPED_WORD), StripItem("Helsinkiläinen", StripItem.Kind.SUGGESTION), null),
+            // "Help" is a correction: one wrong letter away.
+            listOf(
+                StripItem("Hels", StripItem.Kind.TYPED_WORD),
+                StripItem("Helsinkiläinen", StripItem.Kind.SUGGESTION),
+                StripItem("Help", StripItem.Kind.SUGGESTION)
+            ),
             WordSuggestions.stripFor("Hels", dictionary, personal)
         )
     }
@@ -161,6 +166,15 @@ class WordSuggestionsTest {
             listOf(null, StripItem("Mechboard", StripItem.Kind.SUGGESTION), null),
             // Typed in lower case, the saved word keeps its capital.
             WordSuggestions.stripFor("mechboard", dictionary, personal)
+        )
+    }
+
+    @Test
+    fun `an unknown word gets corrections from the bundled dictionary`() {
+        val qwerty = KeyNeighbours.fromDefinition(KeyboardDefinitions.ENGLISH)
+        assertEquals(
+            listOf(StripItem("Teh", StripItem.Kind.TYPED_WORD), StripItem("The", StripItem.Kind.SUGGESTION), null),
+            WordSuggestions.stripFor("Teh", dictionary, personal, qwerty)
         )
     }
 
