@@ -11,6 +11,7 @@ import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -32,6 +33,15 @@ class MechboardService : InputMethodService(),
     private lateinit var suggestionStrip: SuggestionStripView
     private lateinit var soundManager: SoundManager
     private lateinit var prefs: SharedPreferences
+    private lateinit var personalDictionary: PersonalDictionary
+
+    /**
+     * A word the dictionaries did not know, just inserted from the strip as typed.
+     * The strip offers to save it until the user types on or moves the cursor.
+     */
+    private var wordToOffer: String? = null
+
+    private val personalDictionaryListener = PersonalDictionary.Listener { updateSuggestions() }
 
     private val typing = TypingController(
         connection = { currentInputConnection },
@@ -93,6 +103,8 @@ class MechboardService : InputMethodService(),
         currentLayout = layoutFromPrefs()
         soundManager = SoundManager(this, prefs)
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
+        personalDictionary = PersonalDictionary.of(this)
+        personalDictionary.addListener(personalDictionaryListener)
         loadDictionaryIfWanted()
     }
 
@@ -150,7 +162,8 @@ class MechboardService : InputMethodService(),
 
     override fun onFinishInputView(finishingInput: Boolean) {
         super.onFinishInputView(finishingInput)
-        if (::suggestionStrip.isInitialized) suggestionStrip.suggestions = emptyList()
+        wordToOffer = null
+        if (::suggestionStrip.isInitialized) suggestionStrip.items = SuggestionStripView.EMPTY
     }
 
     override fun onUpdateSelection(
@@ -170,6 +183,7 @@ class MechboardService : InputMethodService(),
     override fun onDestroy() {
         super.onDestroy()
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
+        personalDictionary.removeListener(personalDictionaryListener)
         dictionaryLoader.shutdownNow()
         mainHandler.removeCallbacksAndMessages(null)
         soundManager.release()
@@ -208,8 +222,36 @@ class MechboardService : InputMethodService(),
         soundManager.playKeySound(KeyKind.CHARACTER)
     }
 
-    override fun onSuggestionPicked(word: String) {
-        typing.pickSuggestion(word)
+    override fun onSuggestionPicked(item: StripItem) {
+        when (item.kind) {
+            StripItem.Kind.SUGGESTION -> {
+                wordToOffer = null
+                typing.pickSuggestion(item.word)
+            }
+            StripItem.Kind.TYPED_WORD -> {
+                typing.pickSuggestion(item.word)
+                val imeOptions = currentInputEditorInfo?.imeOptions ?: 0
+                wordToOffer = item.word.takeIf { WordSuggestions.fieldAllowsLearning(imeOptions) }
+            }
+            StripItem.Kind.SAVE_WORD -> {
+                wordToOffer = null
+                if (personalDictionary.add(item.word)) {
+                    showToast(getString(R.string.personal_word_added, item.word))
+                }
+            }
+        }
+        updateSuggestions()
+    }
+
+    /** Holding down a word from the personal dictionary removes it from there. */
+    override fun onSuggestionLongPressed(item: StripItem): Boolean {
+        if (item.kind != StripItem.Kind.SUGGESTION) return false
+        // The strip shows the word in the case that was typed; find the saved spelling.
+        val saved = personalDictionary.words.firstOrNull { it.equals(item.word, ignoreCase = true) }
+            ?: return false
+        personalDictionary.remove(saved)
+        showToast(getString(R.string.personal_word_removed, saved))
+        return true
     }
 
     // -------------------------------------------------------------------------
@@ -227,16 +269,23 @@ class MechboardService : InputMethodService(),
         val inputType = currentInputEditorInfo?.inputType ?: InputType.TYPE_NULL
         if (!suggestionsEnabled() || !WordSuggestions.fieldAllowsSuggestions(inputType)) {
             suggestionStrip.visibility = View.GONE
-            suggestionStrip.suggestions = emptyList()
+            suggestionStrip.items = SuggestionStripView.EMPTY
             return
         }
         suggestionStrip.visibility = View.VISIBLE
-        val dictionary = dictionary
-        suggestionStrip.suggestions = if (dictionary == null) {
-            emptyList()
-        } else {
-            WordSuggestions.suggestionsFor(typing.wordAtCursor(), dictionary)
+        val offer = wordToOffer
+        if (offer != null && typing.pickedSuggestionIfUnchanged() == offer) {
+            suggestionStrip.items = WordSuggestions.saveOfferFor(offer)
+            return
         }
+        wordToOffer = null
+        suggestionStrip.items = WordSuggestions.stripFor(
+            typing.wordAtCursor(), dictionary, personalDictionary.asWordDictionary()
+        )
+    }
+
+    private fun showToast(text: String) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     }
 
     /**

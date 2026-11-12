@@ -16,8 +16,29 @@
     <string name="pref_word_suggestions_title">Word suggestions</string>
     <string name="pref_word_suggestions_summary">Show word completions above the keys while typing</string>
 
-    <!-- What a screen reader announces for a word in the suggestion strip -->
+    <!-- Suggestion strip: a word the dictionaries do not know, shown as typed -->
+    <string name="suggestion_typed_word">“%1$s”</string>
+    <!-- Suggestion strip: offer to save a word to the personal dictionary -->
+    <string name="suggestion_save_word">+ %1$s</string>
+
+    <!-- What a screen reader announces for the slots of the suggestion strip -->
     <string name="suggestion_description">Suggestion: %1$s</string>
+    <string name="suggestion_typed_word_description">Keep as typed: %1$s</string>
+    <string name="suggestion_save_word_description">Add %1$s to your dictionary</string>
+
+    <!-- Shown briefly after a word is saved to or removed from the personal dictionary -->
+    <string name="personal_word_added">Added “%1$s” to your dictionary</string>
+    <string name="personal_word_removed">Removed “%1$s” from your dictionary</string>
+
+    <!-- Personal dictionary -->
+    <string name="pref_personal_dictionary_title">Personal dictionary</string>
+    <string name="pref_personal_dictionary_summary">Words you saved for suggestions</string>
+    <string name="personal_dictionary_hint">New word</string>
+    <string name="personal_dictionary_add">Add</string>
+    <string name="personal_dictionary_delete">Delete %1$s</string>
+    <string name="personal_dictionary_empty">No saved words yet. Add one here, or tap a word you typed in the suggestion strip and then tap “+”.</string>
+    <string name="personal_dictionary_invalid">A word starts with a letter and has no spaces</string>
+    <string name="personal_dictionary_duplicate">“%1$s” is already in your dictionary</string>
 
     <!-- What a screen reader announces for keys whose label is a symbol -->
     <string name="key_description_shift">Shift</string>

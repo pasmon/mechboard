@@ -367,4 +367,24 @@ class TypingControllerTest {
         verify(ic).commitText("!", 1)
         verify(ic, never()).deleteSurroundingText(1, 0)
     }
+
+    @Test
+    fun `the picked suggestion is known until the text changes`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello Pas", "Hello Pasi ", "Hello Pasi ")
+        typing.pickSuggestion("Pasi")
+        assertEquals("Pasi", typing.pickedSuggestionIfUnchanged())
+
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello Pasi x")
+        assertEquals(null, typing.pickedSuggestionIfUnchanged())
+    }
+
+    @Test
+    fun `the picked suggestion is forgotten after the next key`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("Hello Pas", "Hello Pasi ")
+        typing.pickSuggestion("Pasi")
+        typing.onKey(KeyCodes.SHIFT)
+        assertEquals("Pasi", typing.pickedSuggestionIfUnchanged())
+        typing.onKey('x'.code)
+        assertEquals(null, typing.pickedSuggestionIfUnchanged())
+    }
 }
