@@ -1,6 +1,7 @@
 package io.github.pasmon.mechboard
 
 import android.text.InputType
+import android.view.inputmethod.EditorInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -85,7 +86,7 @@ class WordSuggestionsTest {
         assertEquals(listOf("b", "a", "c"), WordSuggestions.arrangeInSlots(listOf("a", "b", "c")))
         assertEquals(listOf("b", "a", null), WordSuggestions.arrangeInSlots(listOf("a", "b")))
         assertEquals(listOf(null, "a", null), WordSuggestions.arrangeInSlots(listOf("a")))
-        assertEquals(listOf(null, null, null), WordSuggestions.arrangeInSlots(emptyList()))
+        assertEquals(listOf<String?>(null, null, null), WordSuggestions.arrangeInSlots(emptyList<String>()))
     }
 
     // ── which fields ─────────────────────────────────────────────────────────
@@ -120,6 +121,72 @@ class WordSuggestionsTest {
     fun `fields that ask for no suggestions get none`() {
         assertFalse(WordSuggestions.fieldAllowsSuggestions(
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        ))
+    }
+
+    // ── personal dictionary and the typed word ───────────────────────────────
+
+    private val personal = WordDictionary(listOf("Mechboard", "helsinkiläinen", "Thessa"))
+
+    @Test
+    fun `personal words come before bundled ones but after an exact match`() {
+        assertEquals(listOf("Thessa", "the", "they"), WordSuggestions.suggestionsFor("th", dictionary, personal))
+        assertEquals(listOf("The", "Thessa", "They"), WordSuggestions.suggestionsFor("The", dictionary, personal))
+    }
+
+    @Test
+    fun `personal words are suggested while the bundled dictionary is not loaded`() {
+        assertEquals(listOf("Mechboard"), WordSuggestions.suggestionsFor("mec", null, personal))
+    }
+
+    @Test
+    fun `a known word gets the usual arrangement`() {
+        assertEquals(
+            listOf("they", "the", "there").map { StripItem(it, StripItem.Kind.SUGGESTION) },
+            WordSuggestions.stripFor("the", dictionary)
+        )
+    }
+
+    @Test
+    fun `an unknown word is offered as typed on the left`() {
+        assertEquals(
+            listOf(StripItem("Hels", StripItem.Kind.TYPED_WORD), StripItem("Helsinkiläinen", StripItem.Kind.SUGGESTION), null),
+            WordSuggestions.stripFor("Hels", dictionary, personal)
+        )
+    }
+
+    @Test
+    fun `a saved word is not offered as typed`() {
+        assertEquals(
+            listOf(null, StripItem("Mechboard", StripItem.Kind.SUGGESTION), null),
+            // Typed in lower case, the saved word keeps its capital.
+            WordSuggestions.stripFor("mechboard", dictionary, personal)
+        )
+    }
+
+    @Test
+    fun `nothing is offered as typed until the bundled dictionary is loaded`() {
+        assertEquals(listOf(null, null, null), WordSuggestions.stripFor("zzz", null, personal))
+    }
+
+    @Test
+    fun `no word means an empty strip`() {
+        assertEquals(listOf(null, null, null), WordSuggestions.stripFor("", dictionary, personal))
+    }
+
+    @Test
+    fun `the save offer sits in the middle`() {
+        assertEquals(
+            listOf(null, StripItem("Pasi", StripItem.Kind.SAVE_WORD), null),
+            WordSuggestions.saveOfferFor("Pasi")
+        )
+    }
+
+    @Test
+    fun `incognito fields do not allow learning words`() {
+        assertTrue(WordSuggestions.fieldAllowsLearning(EditorInfo.IME_ACTION_SEND))
+        assertFalse(WordSuggestions.fieldAllowsLearning(
+            EditorInfo.IME_ACTION_GO or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
         ))
     }
 }

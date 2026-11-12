@@ -12,6 +12,7 @@ import androidx.preference.PreferenceFragmentCompat
  *  - Volume level (0–100)
  *  - Keyboard theme (Dark, Solarized Dark, Solarized Light, Dracula, Nord, Monokai)
  *  - Keyboard font (Default, JetBrains Mono, Share Tech Mono)
+ *  - Word suggestions, and a link to the [PersonalDictionaryFragment]
  *
  * Entries for all [ListPreference] widgets are derived at runtime from their
  * respective enums ([KeyboardLayout], [SoundProfile], [KeyboardTheme], and
@@ -26,6 +27,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         bindSoundProfileEntries()
         bindKeyboardThemeEntries()
         bindKeyboardFontEntries()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Back from the personal dictionary, which shows its own title.
+        requireActivity().setTitle(R.string.settings_title)
     }
 
     private fun bindKeyboardLayoutEntries() {

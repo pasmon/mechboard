@@ -31,6 +31,7 @@ A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound ef
 - 🔠 **Shift and caps lock** — tap ⇧ for one capital letter, tap it again for caps lock; sentences start with a capital automatically in fields that ask for it
 - 🔢 **Digits without switching keyboards** — hold a top-row key for its digit; number fields open on the digits keyboard
 - 💬 **Word suggestions** — completions of the word you are typing appear above the keys; tap one to insert it. Works offline from a bundled word list per language, and is off in password, e-mail, web-address and number fields
+- 📖 **Personal dictionary** — a word the dictionary does not know appears in quotes on the left of the strip; tap it to keep it as typed, then tap **+ word** to save it. Saved words are suggested in every language; hold one down in the strip to remove it, or manage the list in settings. Nothing is saved from fields that ask the keyboard not to learn (such as incognito tabs)
 - 🌍 **Five languages** — English, Finnish, German, French and Spanish layouts
 - 🎨 **Six colour themes** (dark by default) and **three key fonts**
 - ♿ **Screen-reader support** — every key is announced and can be activated with TalkBack
@@ -82,6 +83,7 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | Keyboard language | English, Finnish, German, French or Spanish | English |
 | Auto-capitalisation | Start sentences with a capital letter, in text fields that ask for it | On |
 | Word suggestions | Show completions of the word being typed above the keys | On |
+| Personal dictionary | List, add and delete the words you saved | Empty |
 | Keyboard theme | Dark, Solarized Dark, Solarized Light, Dracula, Nord or Monokai | Dark |
 | Key font | Default, JetBrains Mono or Share Tech Mono | Default |
 
@@ -96,9 +98,11 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | `KeyboardDefinitions` | The key arrangement of every language layout and of the symbols keyboard, as plain Kotlin data (`KeyboardDefinition`, `Key`, `KeyCodes`) |
 | `KeyboardGeometry` | Places a definition's keys in pixels and finds the key under a touch |
 | `TypingController` | Turns key codes into edits of the text field: characters, backspace, enter, shift / caps lock (`ShiftState`), auto-capitalisation, and replacing the word at the cursor with a picked suggestion |
-| `SuggestionStripView` | The row of three word suggestions above the keys |
-| `WordSuggestions` | Rules behind the strip: the word at the cursor, matching its capitalisation, slot order, and which fields get suggestions |
+| `SuggestionStripView` | The row of three slots above the keys: suggestions, a word as typed, or the offer to save it |
+| `WordSuggestions` | Rules behind the strip: the word at the cursor, ranking personal and bundled words, matching capitalisation, slot contents, and which fields get suggestions or may learn words |
 | `WordDictionary` | One language's words, ranked by frequency, with case- and accent-insensitive prefix lookup |
+| `PersonalDictionary` | The words the user saved, in `files/personal_dictionary.txt`; shared by the keyboard and the settings screen, which hear each other's changes |
+| `PersonalDictionaryFragment` | Settings screen listing the saved words, with add and delete |
 | `SoundManager` | Loads short sound effects (WAV/MP3/OGG) per profile, picks the sample for each key, reads/writes preferences, exposes `playKeySound(kind)` |
 | `SamplePlayer` | Thin interface over `SoundPool` (`SoundPoolSamplePlayer`) so `SoundManager` can be unit-tested with a fake |
 | `KeyKind` | Enum grouping key codes by how the key sounds: character, space, enter, backspace |

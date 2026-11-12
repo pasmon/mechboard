@@ -34,6 +34,9 @@ class TypingController(
      */
     private var textAfterPickedSuggestion: String? = null
 
+    /** The suggestion picked last, valid while [textAfterPickedSuggestion] is set. */
+    private var pickedSuggestion: String? = null
+
     var shiftState: ShiftState = ShiftState.OFF
         private set(value) {
             if (field == value) return
@@ -96,7 +99,19 @@ class TypingController(
         ic.commitText("$suggestion ", 1)
         ic.endBatchEdit()
         textAfterPickedSuggestion = ic.getTextBeforeCursor(WORD_LOOKBEHIND, 0)?.toString()
+        pickedSuggestion = suggestion
         updateShiftForCursor()
+    }
+
+    /**
+     * Returns the suggestion picked last if nothing happened since: no key was
+     * typed and the text before the cursor is still what the pick left behind.
+     * Otherwise `null`.
+     */
+    fun pickedSuggestionIfUnchanged(): String? {
+        val expected = textAfterPickedSuggestion ?: return null
+        val before = connection()?.getTextBeforeCursor(WORD_LOOKBEHIND, 0)?.toString()
+        return if (before == expected) pickedSuggestion else null
     }
 
     /** Forgets a pending one-letter shift or caps lock, e.g. when a new field gains focus. */

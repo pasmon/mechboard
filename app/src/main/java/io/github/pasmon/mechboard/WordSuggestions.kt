@@ -1,7 +1,22 @@
 package io.github.pasmon.mechboard
 
 import android.text.InputType
+import android.view.inputmethod.EditorInfo
 import java.util.Locale
+
+/**
+ * One slot's content in the suggestion strip.
+ */
+data class StripItem(val word: String, val kind: Kind) {
+    enum class Kind {
+        /** A completion from the bundled or the personal dictionary. */
+        SUGGESTION,
+        /** The word as typed, offered because no dictionary knows it. */
+        TYPED_WORD,
+        /** An offer to save [word] to the personal dictionary. */
+        SAVE_WORD
+    }
+}
 
 /**
  * The rules behind the suggestion strip: which word is being typed, which
@@ -35,17 +50,59 @@ object WordSuggestions {
         textAfter.isNotEmpty() && isLetterOrMark(textAfter[0])
 
     /**
-     * Returns up to [SLOT_COUNT] suggestions for the [typed] word from [dictionary],
-     * best first, with the capitalisation of what was typed: "Hel" gives "Hello",
-     * "HEL" gives "HELLO". Dictionary capitals are kept ("haus" gives "Haus").
+     * Returns up to [SLOT_COUNT] suggestions for the [typed] word, best first, with
+     * the capitalisation of what was typed: "Hel" gives "Hello", "HEL" gives
+     * "HELLO". Dictionary capitals are kept ("haus" gives "Haus").
+     *
+     * A word spelled exactly as typed comes first, then words from the [personal]
+     * dictionary, then words from the bundled [dictionary]. Either may be `null`
+     * (not loaded, or not wanted).
      */
-    fun suggestionsFor(typed: String, dictionary: WordDictionary): List<String> {
+    fun suggestionsFor(
+        typed: String,
+        dictionary: WordDictionary?,
+        personal: WordDictionary? = null
+    ): List<String> {
         if (typed.isEmpty()) return emptyList()
-        return dictionary.completions(typed, SLOT_COUNT * 2)
+        val own = personal?.completions(typed, SLOT_COUNT * 2).orEmpty()
+        val bundled = dictionary?.completions(typed, SLOT_COUNT * 2).orEmpty()
+        val typedLower = typed.lowercase(Locale.ROOT)
+        val exact = (own + bundled).filter { it.lowercase(Locale.ROOT) == typedLower }
+        return (exact + own + bundled)
             .map { matchCase(typed, it) }
             .distinct()
             .take(SLOT_COUNT)
     }
+
+    /**
+     * Returns the strip's [SLOT_COUNT] slots, left to right, for the [typed] word;
+     * empty slots are `null`. The best suggestion goes in the middle, where the
+     * thumb finds it.
+     *
+     * When neither dictionary knows the typed word, it takes the left slot as
+     * typed ([StripItem.Kind.TYPED_WORD]), so it can be inserted unchanged and
+     * then saved. Whether a word is known can only be told once [dictionary] has
+     * loaded; until then the typed word is not offered.
+     */
+    fun stripFor(
+        typed: String,
+        dictionary: WordDictionary?,
+        personal: WordDictionary? = null
+    ): List<StripItem?> {
+        val suggestions = suggestionsFor(typed, dictionary, personal)
+            .map { StripItem(it, StripItem.Kind.SUGGESTION) }
+        val unknown = typed.isNotEmpty() && dictionary != null &&
+            !dictionary.contains(typed) && personal?.contains(typed) != true
+        return if (unknown) {
+            listOf(StripItem(typed, StripItem.Kind.TYPED_WORD), suggestions.getOrNull(0), suggestions.getOrNull(1))
+        } else {
+            arrangeInSlots(suggestions)
+        }
+    }
+
+    /** The strip offering to save [word] to the personal dictionary, in the middle slot. */
+    fun saveOfferFor(word: String): List<StripItem?> =
+        listOf(null, StripItem(word, StripItem.Kind.SAVE_WORD), null)
 
     /** Applies the capitalisation of [typed] to [word]. */
     fun matchCase(typed: String, word: String): String {
@@ -63,7 +120,7 @@ object WordSuggestions {
      * right: the best in the middle, where the thumb finds it, the second on the
      * left and the third on the right. Empty slots are `null`.
      */
-    fun arrangeInSlots(suggestions: List<String>): List<String?> = listOf(
+    fun <T> arrangeInSlots(suggestions: List<T>): List<T?> = listOf(
         suggestions.getOrNull(1),
         suggestions.getOrNull(0),
         suggestions.getOrNull(2)
@@ -87,6 +144,14 @@ object WordSuggestions {
             else -> true
         }
     }
+
+    /**
+     * Whether words typed in a field with [imeOptions] may be saved to the
+     * personal dictionary: not in fields that ask the keyboard not to learn from
+     * what is typed (incognito tabs, for example).
+     */
+    fun fieldAllowsLearning(imeOptions: Int): Boolean =
+        imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING == 0
 
     private fun isWordChar(c: Char): Boolean = isLetterOrMark(c) || isApostrophe(c)
 

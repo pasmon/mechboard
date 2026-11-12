@@ -18,9 +18,11 @@ import android.widget.TextView
 /**
  * The row of word suggestions above the keys.
  *
- * Shows up to [WordSuggestions.SLOT_COUNT] words, arranged by
- * [WordSuggestions.arrangeInSlots]; tapping one reports it to [listener].
- * Colours come from the active keyboard theme, like [MechboardKeyboardView].
+ * Shows [WordSuggestions.SLOT_COUNT] slots of [StripItem]s, left to right, as
+ * laid out by [WordSuggestions.stripFor]. A word as typed is shown in quotes and
+ * an offer to save a word with a "+". Taps and long presses are reported to
+ * [listener]. Colours come from the active keyboard theme, like
+ * [MechboardKeyboardView].
  */
 class SuggestionStripView @JvmOverloads constructor(
     context: Context,
@@ -32,25 +34,42 @@ class SuggestionStripView @JvmOverloads constructor(
         /** A finger landed on a suggestion; used to play the key sound on touch-down. */
         fun onSuggestionPress()
 
-        /** The suggestion [word] was tapped. */
-        fun onSuggestionPicked(word: String)
+        /** The slot showing [item] was tapped. */
+        fun onSuggestionPicked(item: StripItem)
+
+        /**
+         * The slot showing [item] was held down. Returns whether the long press
+         * was used; if not, it is treated as a tap once the finger lifts.
+         */
+        fun onSuggestionLongPressed(item: StripItem): Boolean
     }
 
     var listener: Listener? = null
 
-    /** The suggestions shown, best first. */
-    var suggestions: List<String> = emptyList()
+    /** What each slot shows, left to right; `null` for an empty slot. */
+    var items: List<StripItem?> = EMPTY
         set(value) {
+            require(value.size == WordSuggestions.SLOT_COUNT) { "need ${WordSuggestions.SLOT_COUNT} slots" }
             if (field == value) return
             field = value
-            WordSuggestions.arrangeInSlots(value).forEachIndexed { i, word ->
-                slots[i].text = word ?: ""
-                slots[i].isEnabled = word != null
-                slots[i].contentDescription = word?.let {
-                    context.getString(R.string.suggestion_description, it)
-                }
+            value.forEachIndexed { i, item ->
+                slots[i].text = item?.let { label(it) } ?: ""
+                slots[i].isEnabled = item != null
+                slots[i].contentDescription = item?.let { description(it) }
             }
         }
+
+    private fun label(item: StripItem): String = when (item.kind) {
+        StripItem.Kind.SUGGESTION -> item.word
+        StripItem.Kind.TYPED_WORD -> context.getString(R.string.suggestion_typed_word, item.word)
+        StripItem.Kind.SAVE_WORD  -> context.getString(R.string.suggestion_save_word, item.word)
+    }
+
+    private fun description(item: StripItem): String = when (item.kind) {
+        StripItem.Kind.SUGGESTION -> context.getString(R.string.suggestion_description, item.word)
+        StripItem.Kind.TYPED_WORD -> context.getString(R.string.suggestion_typed_word_description, item.word)
+        StripItem.Kind.SAVE_WORD  -> context.getString(R.string.suggestion_save_word_description, item.word)
+    }
 
     /**
      * The typeface to use for suggestions, matching the keys' labels.
@@ -78,7 +97,7 @@ class SuggestionStripView @JvmOverloads constructor(
             if (i > 0) addView(divider(), LayoutParams(dividerWidth(), height / 2).apply {
                 gravity = Gravity.CENTER_VERTICAL
             })
-            createSlot().also { addView(it, LayoutParams(0, height, 1f)) }
+            createSlot(i).also { addView(it, LayoutParams(0, height, 1f)) }
         }
         labelTypeface = null
     }
@@ -86,7 +105,7 @@ class SuggestionStripView @JvmOverloads constructor(
     // The touch listener only plays the sound and returns false, so the TextView
     // still handles the touch and performs the click.
     @SuppressLint("ClickableViewAccessibility")
-    private fun createSlot() = TextView(context).apply {
+    private fun createSlot(index: Int) = TextView(context).apply {
         gravity = Gravity.CENTER
         setTextColor(labelColor)
         setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.suggestion_text_size))
@@ -108,7 +127,10 @@ class SuggestionStripView @JvmOverloads constructor(
         // performClick() (used by accessibility services) runs this even on a
         // disabled view, so check for an empty slot here too.
         setOnClickListener {
-            if (isEnabled && text.isNotEmpty()) listener?.onSuggestionPicked(text.toString())
+            if (isEnabled) items[index]?.let { listener?.onSuggestionPicked(it) }
+        }
+        setOnLongClickListener {
+            isEnabled && items[index]?.let { listener?.onSuggestionLongPressed(it) } == true
         }
     }
 
@@ -135,9 +157,16 @@ class SuggestionStripView @JvmOverloads constructor(
         slots[index].performClick()
     }
 
-    private companion object {
+    /** Test access: holds down the slot at [index], left to right. */
+    internal fun longClickSlot(index: Int): Boolean = slots[index].performLongClick()
+
+    companion object {
+        /** A strip with every slot empty. */
+        val EMPTY: List<StripItem?> = List(WordSuggestions.SLOT_COUNT) { null }
+
+
         /** Index of the slot holding the best suggestion; see [WordSuggestions.arrangeInSlots]. */
-        const val BEST_SLOT = 1
-        const val DIVIDER_ALPHA = 0x40
+        private const val BEST_SLOT = 1
+        private const val DIVIDER_ALPHA = 0x40
     }
 }
