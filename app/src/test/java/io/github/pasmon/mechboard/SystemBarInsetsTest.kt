@@ -76,6 +76,49 @@ class SystemBarInsetsTest {
         assertEquals(0, root.paddingBottom)
     }
 
+    @Test
+    fun `keyboard pads itself by its own navigation buttons, which count as a caption bar`() {
+        val service = Robolectric.setupService(MechboardService::class.java)
+        val root = service.onCreateInputView()
+        // With gesture navigation the system draws the switch and hide buttons
+        // inside the keyboard window and reports them as caption bar insets.
+        val imeNavigationBar = WindowInsetsCompat.Builder()
+            .setInsets(WindowInsetsCompat.Type.captionBar(), Insets.of(0, 0, 0, NAVIGATION_BAR))
+            .build()
+        ViewCompat.dispatchApplyWindowInsets(root, imeNavigationBar)
+
+        assertEquals(NAVIGATION_BAR, root.paddingBottom)
+    }
+
+    @Test
+    fun `a new keyboard view asks for the insets once attached`() {
+        // A window sends insets only when they change or a view asks for them, and
+        // the keyboard view is replaced (e.g. on a theme change) while the window
+        // keeps its insets. Without asking, the new view would never be padded.
+        val activity = Robolectric.buildActivity(android.app.Activity::class.java).setup().get()
+        val parent = RequestCountingFrame(activity)
+        activity.setContentView(parent)
+        val service = Robolectric.setupService(MechboardService::class.java)
+        val root = service.onCreateInputView()
+        val before = parent.requests
+
+        parent.addView(root)
+
+        assertEquals(before + 1, parent.requests)
+    }
+
+    /** Counts the requests for insets that reach it from its children. */
+    private class RequestCountingFrame(context: android.content.Context) : android.widget.FrameLayout(context) {
+        var requests = 0
+
+        @Deprecated("Deprecated in Java")
+        override fun requestFitSystemWindows() {
+            requests++
+            @Suppress("DEPRECATION")
+            super.requestFitSystemWindows()
+        }
+    }
+
     private companion object {
         const val WIDTH = 1080
         const val HEIGHT = 2400
