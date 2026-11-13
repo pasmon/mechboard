@@ -36,6 +36,11 @@ enum class SoundProfile(
         displayName = "Cherry MX Brown (Tactile)",
         rawFileName = "cherry_brown"
     ),
+    CHERRY_MX_BLACK(
+        id = "cherry_black",
+        displayName = "Cherry MX Black (Heavy Linear)",
+        rawFileName = "cherry_black"
+    ),
     TOPRE(
         id = "topre",
         displayName = "Topre (Thocky)",
@@ -43,7 +48,7 @@ enum class SoundProfile(
     ),
     ALPS(
         id = "alps",
-        displayName = "Alps (Vintage)",
+        displayName = "Blue Alps (Vintage Clicky)",
         rawFileName = "alps"
     ),
     NK_CREAM(
@@ -55,6 +60,21 @@ enum class SoundProfile(
         id = "holy_panda",
         displayName = "Holy Panda (Tactile Thock)",
         rawFileName = "holy_panda"
+    ),
+    GATERON_BLACK_INK(
+        id = "gateron_black_ink",
+        displayName = "Gateron Black Ink (Deep Linear)",
+        rawFileName = "gateron_black_ink"
+    ),
+    BOX_NAVY(
+        id = "box_navy",
+        displayName = "Kailh Box Navy (Heavy Clicky)",
+        rawFileName = "box_navy"
+    ),
+    BUCKLING_SPRING(
+        id = "buckling_spring",
+        displayName = "Buckling Spring (IBM Model M)",
+        rawFileName = "buckling_spring"
     ),
     TYPEWRITER(
         id = "typewriter",

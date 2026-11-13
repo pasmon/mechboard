@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Mechboard** is an Android Input Method Editor (IME / soft keyboard) written in Kotlin. It provides a QWERTY keyboard in five languages with authentic mechanical keyboard sound effects and word suggestions. Users can pick from nine sound profiles, toggle sounds, adjust volume, and choose a language, colour theme and key font via a built-in settings screen.
+**Mechboard** is an Android Input Method Editor (IME / soft keyboard) written in Kotlin. It provides a QWERTY keyboard in five languages with authentic mechanical keyboard sound effects and word suggestions. Users can pick from thirteen sound profiles, toggle sounds, adjust volume, and choose a language, colour theme and key font via a built-in settings screen.
 
 ## Architecture
 
@@ -24,7 +24,7 @@
 | `PersonalDictionaryFragment` | Settings screen to list, add and delete saved words |
 | `SoundManager` | Loads sound samples per profile, picks the sample for each key (`KeyKind`), applies `SoundVariation`, reads/writes preferences, exposes `playKeySound(kind)` |
 | `SamplePlayer` | Thin interface over `SoundPool` so `SoundManager` can be unit-tested with a fake |
-| `SoundProfile` | Enum of nine profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
+| `SoundProfile` | Enum of thirteen profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
 | `SettingsActivity` | `AppCompatActivity` that hosts `SettingsFragment` |
 | `SettingsFragment` | `PreferenceFragmentCompat`; renders the settings |
 | `PrefsKeys` | Plain object of SharedPreferences key constants (no Android dependency — keeps unit tests simple) |
@@ -55,7 +55,7 @@ res/
   xml/
     method.xml          # IME metadata
     preferences.xml     # Preference screen definition
-  raw/                  # Sound samples: <profile>.{ogg,mp3,wav} and <profile>_{space,enter,backspace}.ogg; a profile's samples come from one recording (scripts/sounds/cut_mechvibes_pack.py)
+  raw/                  # Sound samples: <profile>.{ogg,mp3,wav} and <profile>_{space,enter,backspace}.ogg; a profile's samples come from one recording (scripts/sounds/cut_mechvibes_pack.py, cut_key_files.py)
   font/                 # Bundled key fonts
   values/
     attrs.xml           # Theme attributes for keyboard colours
@@ -80,7 +80,8 @@ res/
 
 1. Add a WAV, MP3 or OGG file to `app/src/main/res/raw/`.
 2. Add a new entry to the `SoundProfile` enum with a unique `id`, a `displayName`, and the matching `rawFileName`.
-3. No changes to `SoundManager` are needed — it iterates all profiles dynamically.
+3. Credit the file's source and license in `CREDITS.md`; `SoundProfileTest` checks every profile is listed.
+4. No changes to `SoundManager` are needed — it iterates all profiles dynamically.
 
 ## Code Style
 
