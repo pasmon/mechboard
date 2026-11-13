@@ -2,6 +2,7 @@ package io.github.pasmon.mechboard
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -150,5 +151,92 @@ class WordDictionaryTest {
         assertEquals("Bank", variants.spellingOf("Bank"))
         assertEquals("bank", variants.spellingOf("bank"))
         assertEquals("bank", variants.spellingOf("BANK"))
+    }
+
+    // ── autocorrection ───────────────────────────────────────────────────────
+
+    @Test
+    fun `one typo apart means one letter left out, added, changed or two swapped`() {
+        assertTrue(WordDictionary.isOneTypoApart("the", "the"))
+        assertTrue(WordDictionary.isOneTypoApart("teh", "the"))
+        assertTrue(WordDictionary.isOneTypoApart("thw", "the"))
+        assertTrue(WordDictionary.isOneTypoApart("th", "the"))
+        assertTrue(WordDictionary.isOneTypoApart("thee", "the"))
+        assertFalse(WordDictionary.isOneTypoApart("eht", "the"))
+        assertFalse(WordDictionary.isOneTypoApart("t", "the"))
+        assertFalse(WordDictionary.isOneTypoApart("tje", "thy"))
+    }
+
+    // Most frequent first.
+    private val correctable = WordDictionary(
+        listOf("the", "and", "that", "what", "because", "work", "won't", "board", "WTC", "wired", "weird",
+            "hello", "here", "now", "niin", "päivä", "kinds")
+    )
+
+    @Test
+    fun `clear typos are corrected`() {
+        assertEquals("the", correctable.autocorrection("teh", qwerty))
+        assertEquals("the", correctable.autocorrection("hte", qwerty))
+        assertEquals("because", correctable.autocorrection("becuase", qwerty))
+        assertEquals("work", correctable.autocorrection("wrok", qwerty))
+        assertEquals("päivä", correctable.autocorrection("paiva", qwerty))
+    }
+
+    @Test
+    fun `a missing apostrophe is corrected even in a short word`() {
+        assertEquals("won't", correctable.autocorrection("wont", qwerty))
+    }
+
+    @Test
+    fun `known words and short text are left alone`() {
+        assertNull(correctable.autocorrection("the", qwerty))
+        assertNull(correctable.autocorrection("THE", qwerty))
+        assertNull(correctable.autocorrection("th", qwerty))
+    }
+
+    @Test
+    fun `completions are not autocorrections`() {
+        // "nii" is one letter short of "niin", but that is a completion.
+        assertNull(correctable.autocorrection("nii", qwerty))
+        assertNull(correctable.autocorrection("hell", qwerty))
+    }
+
+    @Test
+    fun `a dropped last letter is not corrected`() {
+        // "thats" is one letter more than "that", but means "that's".
+        assertNull(correctable.autocorrection("thats", qwerty))
+    }
+
+    @Test
+    fun `the first letter is kept unless the first two were swapped`() {
+        assertNull(correctable.autocorrection("gboard", qwerty))
+        assertEquals("the", correctable.autocorrection("hte", qwerty))
+    }
+
+    @Test
+    fun `acronyms are never the correction`() {
+        assertNull(correctable.autocorrection("wtf", qwerty))
+    }
+
+    @Test
+    fun `short words are only corrected for likely typos`() {
+        // x is far from e: "thx" is more likely slang than a typo of "the".
+        assertNull(correctable.autocorrection("thx", qwerty))
+        assertNull(correctable.autocorrection("hehe", qwerty))
+        // w is next to e.
+        assertEquals("the", correctable.autocorrection("thw", qwerty))
+    }
+
+    @Test
+    fun `nothing is corrected when two corrections are about as likely`() {
+        // "wierd" is one swap from both "wired" and "weird".
+        assertNull(correctable.autocorrection("wierd", qwerty))
+    }
+
+    @Test
+    fun `rare words are not corrected to`() {
+        // "zebra" is the 20,001st word: too rare for a swap to be corrected to it.
+        val long = WordDictionary((0 until 20_000).map { "filler$it" } + "zebra")
+        assertNull(long.autocorrection("zebar", qwerty))
     }
 }

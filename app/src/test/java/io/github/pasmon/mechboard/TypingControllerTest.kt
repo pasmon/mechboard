@@ -5,6 +5,8 @@ import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -413,5 +415,52 @@ class TypingControllerTest {
         whenever(ic.getTextBeforeCursor(any(), any())).doReturn("going home ")
         assertEquals(null, typing.finishedWordPair())
         assertEquals("going" to "home", typing.finishedWordPair(ignoreTrailingSpace = true))
+    }
+
+    // ── autocorrect ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `autocorrecting replaces the word and types the separator`() {
+        typing.autocorrectAndType("teh", "the", KeyCodes.SPACE)
+        verify(ic).deleteSurroundingText(3, 0)
+        verify(ic).commitText("the", 1)
+        verify(ic).commitText(" ", 1)
+    }
+
+    @Test
+    fun `backspace right after undoes the correction and keeps the separator`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("I said the ")
+        typing.autocorrectAndType("teh", "the", KeyCodes.SPACE)
+        typing.onKey(KeyCodes.BACKSPACE)
+        verify(ic).deleteSurroundingText(4, 0)
+        verify(ic).commitText("teh ", 1)
+        assertTrue(typing.isAutocorrectionRejected("TEH"))
+    }
+
+    @Test
+    fun `backspace deletes normally once the text changed`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("I said the ", "I said the x")
+        typing.autocorrectAndType("teh", "the", KeyCodes.SPACE)
+        typing.onKey(KeyCodes.BACKSPACE)
+        verify(ic, never()).commitText("teh ", 1)
+        verify(ic).deleteSurroundingText(1, 0)
+    }
+
+    @Test
+    fun `backspace deletes normally after another key`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("I said the ")
+        typing.autocorrectAndType("teh", "the", KeyCodes.SPACE)
+        typing.onKey('x'.code)
+        typing.onKey(KeyCodes.BACKSPACE)
+        verify(ic, never()).commitText("teh ", 1)
+    }
+
+    @Test
+    fun `a new field forgets rejected corrections`() {
+        whenever(ic.getTextBeforeCursor(any(), any())).doReturn("I said the ")
+        typing.autocorrectAndType("teh", "the", KeyCodes.SPACE)
+        typing.onKey(KeyCodes.BACKSPACE)
+        typing.startField()
+        assertFalse(typing.isAutocorrectionRejected("teh"))
     }
 }

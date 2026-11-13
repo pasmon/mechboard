@@ -100,6 +100,26 @@ class BundledDictionariesTest {
             .forEach { assertTrue(it.name, it.name.removeSuffix("_next.txt") in ids) }
     }
 
+    @Test
+    fun `autocorrect fixes clear typos and leaves slang and names alone`() {
+        val english = WordDictionary(wordsOf(KeyboardLayout.ENGLISH))
+        val qwerty = KeyboardLayout.ENGLISH.neighbours
+        mapOf(
+            "teh" to "the", "hte" to "the", "becuase" to "because", "recieve" to "receive",
+            "jsut" to "just", "freind" to "friend", "goverment" to "government",
+            "dont" to "don't", "ive" to "I've", "thats" to "that's"
+        ).forEach { (typo, word) -> assertEquals(typo, word, english.autocorrection(typo, qwerty)) }
+        listOf("wierd", "lol", "btw", "omg", "idk", "thx", "haha", "hehe", "apps", "Pasi", "Kotlin", "Gboard", "wtf", "gonna")
+            .forEach { assertEquals(it, null, english.autocorrection(it, qwerty)) }
+
+        val finnish = WordDictionary(wordsOf(KeyboardLayout.FINNISH))
+        val finnishKeys = KeyboardLayout.FINNISH.neighbours
+        assertEquals("päivä", finnish.autocorrection("paiva", finnishKeys))
+        assertEquals("hyvää", finnish.autocorrection("hyvaa", finnishKeys))
+        listOf("nii", "sit", "mut", "joo", "moi", "kiitti", "mennää", "ollaa")
+            .forEach { assertEquals(it, null, finnish.autocorrection(it, finnishKeys)) }
+    }
+
     private companion object {
         const val MIN_WORDS = 10_000
     }

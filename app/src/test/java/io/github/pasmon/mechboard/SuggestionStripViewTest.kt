@@ -93,4 +93,13 @@ class SuggestionStripViewTest {
         strip.items = SuggestionStripView.EMPTY
         assertEquals(listOf("", "", ""), strip.slotTexts)
     }
+
+    @Test
+    fun `the correction a space will make is underlined`() {
+        strip.items = listOf(StripItem("teh", StripItem.Kind.TYPED_WORD), StripItem("the", StripItem.Kind.AUTOCORRECTION), null)
+        assertEquals(listOf("“teh”", "the", ""), strip.slotTexts)
+        assertEquals(listOf(false, true, false), strip.slotUnderlines)
+        strip.items = listOf(null, suggestion("the"), null)
+        assertEquals(listOf(false, false, false), strip.slotUnderlines)
+    }
 }

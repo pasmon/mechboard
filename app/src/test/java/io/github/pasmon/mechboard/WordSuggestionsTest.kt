@@ -256,4 +256,56 @@ class WordSuggestionsTest {
         // Likely words that do not fit what was typed are not suggested.
         assertFalse(WordSuggestions.suggestionsFor("t", dictionary, likelyNext = listOf("home")).contains("home"))
     }
+
+    // ── autocorrect ──────────────────────────────────────────────────────────
+
+    private val qwertyLayout = KeyNeighbours.fromDefinition(KeyboardDefinitions.ENGLISH)
+    private val withTypos = WordDictionary(listOf("the", "and", "because", "work"))
+
+    @Test
+    fun `autocorrections take the capitalisation of what was typed`() {
+        assertEquals("The", WordSuggestions.autocorrectionFor("Teh", withTypos, null, qwertyLayout))
+        assertEquals("Because", WordSuggestions.autocorrectionFor("Becuase", withTypos, null, qwertyLayout))
+    }
+
+    @Test
+    fun `words typed in capitals are left alone, as they may be acronyms`() {
+        assertEquals(null, WordSuggestions.autocorrectionFor("BECUASE", withTypos, null, qwertyLayout))
+    }
+
+    @Test
+    fun `saved words, inner capitals and an unloaded dictionary are left alone`() {
+        assertEquals(null, WordSuggestions.autocorrectionFor("teh", withTypos, WordDictionary(listOf("teh")), qwertyLayout))
+        assertEquals(null, WordSuggestions.autocorrectionFor("tEh", withTypos, null, qwertyLayout))
+        assertEquals(null, WordSuggestions.autocorrectionFor("teh", null, null, qwertyLayout))
+    }
+
+    @Test
+    fun `only multi-line fields and fields that ask are autocorrected`() {
+        val text = InputType.TYPE_CLASS_TEXT
+        assertTrue(WordSuggestions.fieldAllowsAutocorrect(text or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT))
+        assertTrue(WordSuggestions.fieldAllowsAutocorrect(text or InputType.TYPE_TEXT_FLAG_MULTI_LINE))
+        assertFalse(WordSuggestions.fieldAllowsAutocorrect(text))
+        assertFalse(WordSuggestions.fieldAllowsAutocorrect(
+            text or InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        ))
+        assertTrue(WordSuggestions.fieldAllowsAutocorrect(
+            text or InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
+        ))
+        assertFalse(WordSuggestions.fieldAllowsAutocorrect(
+            text or InputType.TYPE_TEXT_VARIATION_PASSWORD or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
+        ))
+    }
+
+    @Test
+    fun `the strip marks the correction a space will make`() {
+        assertEquals(
+            listOf(
+                StripItem("teh", StripItem.Kind.TYPED_WORD),
+                StripItem("the", StripItem.Kind.AUTOCORRECTION),
+                null
+            ),
+            WordSuggestions.stripFor("teh", withTypos, null, qwertyLayout, autocorrection = "the")
+        )
+    }
 }

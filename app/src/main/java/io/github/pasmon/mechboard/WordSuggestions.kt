@@ -13,6 +13,8 @@ data class StripItem(val word: String, val kind: Kind) {
         SUGGESTION,
         /** The word as typed, offered because no dictionary knows it. */
         TYPED_WORD,
+        /** The correction a space (or punctuation) will make; otherwise like [SUGGESTION]. */
+        AUTOCORRECTION,
         /** An offer to save [word] to the personal dictionary. */
         SAVE_WORD
     }
@@ -138,16 +140,30 @@ object WordSuggestions {
      * then saved. Whether a word is known can only be told once [dictionary] has
      * loaded; until then the typed word is not offered. [likelyNext] are words
      * that often follow the previous word; see [suggestionsFor].
+     *
+     * With an [autocorrection] (see [autocorrectionFor]), the middle slot shows
+     * it as [StripItem.Kind.AUTOCORRECTION], so the user sees what a space will do.
      */
     fun stripFor(
         typed: String,
         dictionary: WordDictionary?,
         personal: WordDictionary? = null,
         neighbours: KeyNeighbours? = null,
-        likelyNext: List<String> = emptyList()
+        likelyNext: List<String> = emptyList(),
+        autocorrection: String? = null
     ): List<StripItem?> {
         val suggestions = suggestionsFor(typed, dictionary, personal, neighbours, likelyNext)
             .map { StripItem(it, StripItem.Kind.SUGGESTION) }
+        if (autocorrection != null) {
+            // Typed word on the left, as always for unknown words; the correction a
+            // space will make in the middle, marked; the best other suggestion right.
+            val other = suggestions.firstOrNull { !it.word.equals(autocorrection, ignoreCase = true) }
+            return listOf(
+                StripItem(typed, StripItem.Kind.TYPED_WORD),
+                StripItem(autocorrection, StripItem.Kind.AUTOCORRECTION),
+                other
+            )
+        }
         val unknown = typed.isNotEmpty() && dictionary != null &&
             !dictionary.contains(typed) && personal?.contains(typed) != true
         return if (unknown) {
@@ -200,6 +216,39 @@ object WordSuggestions {
             InputType.TYPE_TEXT_VARIATION_URI -> false
             else -> true
         }
+    }
+
+    /**
+     * Returns what a space after the [typed] word should correct it to, with the
+     * capitalisation of what was typed, or `null` to leave it alone; see
+     * [WordDictionary.autocorrection]. Words in the [personal] dictionary, words
+     * with capitals after the first letter ("iPhone", "NASA") and anything typed
+     * before [dictionary] has loaded are left alone.
+     */
+    fun autocorrectionFor(
+        typed: String,
+        dictionary: WordDictionary?,
+        personal: WordDictionary? = null,
+        neighbours: KeyNeighbours? = null
+    ): String? {
+        if (dictionary == null || typed.isEmpty()) return null
+        if (typed.drop(1).any { it.isUpperCase() }) return null
+        if (personal?.contains(typed) == true) return null
+        return dictionary.autocorrection(typed, neighbours)?.let { matchCase(typed, it) }
+    }
+
+    /**
+     * Whether a field of [inputType] may be autocorrected: one that gets
+     * suggestions and either asks for autocorrection or is multi-line, like a
+     * message or a note. Single-line fields that do not ask, such as search boxes
+     * and name fields, are left alone, as are web text fields that do not ask.
+     */
+    fun fieldAllowsAutocorrect(inputType: Int): Boolean {
+        if (!fieldAllowsSuggestions(inputType)) return false
+        val asks = inputType and InputType.TYPE_TEXT_FLAG_AUTO_CORRECT != 0
+        val variation = inputType and InputType.TYPE_MASK_VARIATION
+        if (variation == InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT) return asks
+        return asks || inputType and InputType.TYPE_TEXT_FLAG_MULTI_LINE != 0
     }
 
     /**
