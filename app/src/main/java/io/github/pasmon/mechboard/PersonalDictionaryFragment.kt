@@ -11,8 +11,6 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ListView
 import android.widget.TextView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 
 /**
@@ -50,7 +48,6 @@ class PersonalDictionaryFragment : Fragment(R.layout.fragment_personal_dictionar
                 false
             }
         }
-        keepListClearOfNavigationBar()
 
         dictionary.addListener(listener)
         showWords()
@@ -86,15 +83,6 @@ class PersonalDictionaryFragment : Fragment(R.layout.fragment_personal_dictionar
         val empty = dictionary.words.isEmpty()
         emptyMessage.visibility = if (empty) View.VISIBLE else View.GONE
         wordList.visibility = if (empty) View.GONE else View.VISIBLE
-    }
-
-    /** The window draws behind the navigation bar; let the last words scroll above it. */
-    private fun keepListClearOfNavigationBar() {
-        ViewCompat.setOnApplyWindowInsetsListener(wordList) { list, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            list.setPadding(list.paddingLeft, list.paddingTop, list.paddingRight, bars.bottom)
-            insets
-        }
     }
 
     private inner class WordAdapter : ArrayAdapter<String>(requireContext(), 0) {

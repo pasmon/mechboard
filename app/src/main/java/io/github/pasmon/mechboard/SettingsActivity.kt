@@ -4,8 +4,11 @@ import android.content.Context
 import android.os.Bundle
 import android.util.TypedValue
 import androidx.appcompat.app.AppCompatActivity
+import android.view.View
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 
 /**
  * Hosts [SettingsFragment] and acts as the entry point for the keyboard
@@ -23,12 +26,30 @@ class SettingsActivity : AppCompatActivity() {
         setTheme(settingsThemeResId(KeyboardTheme.fromId(themeId)))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
+        keepClearOfBars(findViewById(R.id.settings_container))
         matchSystemBarIconsToBackground()
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.settings_container, SettingsFragment())
                 .commit()
+        }
+    }
+
+    /**
+     * The window draws behind the status and navigation bars, and there the
+     * action bar overlays the content instead of pushing it down. The insets that
+     * reach [container] cover the system bars, the action bar and any display
+     * cutout; padding by them keeps the first and last settings in view. Where
+     * the window stops short of the bars the insets are zero.
+     */
+    private fun keepClearOfBars(container: View) {
+        ViewCompat.setOnApplyWindowInsetsListener(container) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            WindowInsetsCompat.CONSUMED
         }
     }
 
