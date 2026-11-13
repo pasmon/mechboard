@@ -55,7 +55,7 @@ res/
   xml/
     method.xml          # IME metadata
     preferences.xml     # Preference screen definition
-  raw/                  # Sound samples: <profile>.{mp3,wav} and <profile>_{space,enter,backspace}.ogg
+  raw/                  # Sound samples: <profile>.{ogg,mp3,wav} and <profile>_{space,enter,backspace}.ogg; a profile's samples come from one recording (scripts/sounds/cut_mechvibes_pack.py)
   font/                 # Bundled key fonts
   values/
     attrs.xml           # Theme attributes for keyboard colours
