@@ -14,6 +14,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.doOnAttach
 import androidx.core.view.WindowInsetsCompat
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -31,6 +32,8 @@ class MechboardService : InputMethodService(),
 
     private lateinit var keyboardView: MechboardKeyboardView
     private lateinit var suggestionStrip: SuggestionStripView
+    /** The view returned by the latest [onCreateInputView]. */
+    private var inputRoot: View? = null
     private lateinit var soundManager: SoundManager
     private lateinit var prefs: SharedPreferences
     private lateinit var personalDictionary: PersonalDictionary
@@ -132,6 +135,7 @@ class MechboardService : InputMethodService(),
         showCurrentKeyboard()
         applyFontFromPrefs()
         keepClearOfSystemBars(rootView)
+        inputRoot = rootView
         return rootView
     }
 
@@ -139,18 +143,31 @@ class MechboardService : InputMethodService(),
      * Pads [rootView] by the size of the navigation bar and any display cutout.
      *
      * On Android 15 and later the keyboard window extends behind the navigation
-     * bar; without the padding the bottom row of keys would sit under it. The
-     * padded area shows [rootView]'s background, i.e. the keyboard colour. Where
-     * the window does not extend behind the bars the insets are zero.
+     * bar, and with gesture navigation the system draws its own row of buttons
+     * (switch keyboard, hide keyboard) inside the keyboard window, reported as
+     * caption bar insets. Without the padding the bottom row of keys would sit
+     * under them. The padded area shows [rootView]'s background, i.e. the
+     * keyboard colour. Where the window does not extend behind the bars the
+     * insets are zero.
+     *
+     * A window only sends insets when they change or a view asks for them, and
+     * the input view is replaced while the window keeps its insets (a theme
+     * change, a configuration change). So the view asks whenever it is attached,
+     * and [onWindowShown] applies the window's insets once more.
      */
     private fun keepClearOfSystemBars(rootView: View) {
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            view.setPadding(bars.left, 0, bars.right, bars.bottom)
+            padForSystemBars(view, insets)
             insets
         }
+        rootView.doOnAttach { ViewCompat.requestApplyInsets(it) }
+    }
+
+    override fun onWindowShown() {
+        super.onWindowShown()
+        val root = inputRoot ?: return
+        val insets = window?.window?.decorView?.rootWindowInsets ?: return
+        padForSystemBars(root, WindowInsetsCompat.toWindowInsetsCompat(insets, root))
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
@@ -494,6 +511,18 @@ class MechboardService : InputMethodService(),
 
     companion object {
         const val PREFS_NAME = "mechboard_prefs"
+
+        /**
+         * Pads [view] by the system bars (including the keyboard's own navigation
+         * buttons, which count as a caption bar) and display cutout in [insets],
+         * on the sides and the bottom.
+         */
+        internal fun padForSystemBars(view: View, insets: WindowInsetsCompat) {
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(bars.left, 0, bars.right, bars.bottom)
+        }
 
         /** Punctuation that ends a word, for learning which word followed which. */
         private val WORD_ENDING_PUNCTUATION = ".,!?:;".map { it.code }.toSet()

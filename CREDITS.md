@@ -4,19 +4,31 @@ This file documents the origin and license of every audio asset and word list bu
 
 ---
 
-## Replaced / Re-sourced Profiles
+## Cherry MX and Topre Profiles
 
-The following profiles were re-sourced from the open-source
-[Mechvibes](https://github.com/hainguyents13/mechvibes) project to establish
-clear provenance. Individual per-key press samples were taken directly from
-each profile's asset directory.
+Every sound of these four profiles — an ordinary key, the space bar, enter and
+backspace — is cut from one recording: a single-file sound pack in the
+[Mechvibes](https://github.com/hainguyents13/mechvibes) repository (tag
+`v3.5.6`, commit `56d7135`), so that all keys of a profile sound like the same
+keyboard. `scripts/sounds/cut_mechvibes_pack.py` does the cutting: each sample
+is the *press* half of the key's entry in the pack's `config.json`, mixed down
+to mono, trimmed of leading silence and faded out over its last 5 ms. All four
+samples of a profile get one gain, chosen so that the ordinary key is as loud
+as the profile's previous sample; the keys keep the loudness they have
+relative to each other in the recording. The ordinary key is the letter key of
+median loudness in the pack.
 
-| File | Profile | Source project | Upstream file | License |
+| Files | Profile | Upstream sound pack | Upstream keys | License |
 |---|---|---|---|---|
-| `cherry_blue.mp3` | Cherry MX Blue (Clicky) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "CherryMX Blue" | `src/audio/mxblue-travel/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
-| `cherry_red.mp3` | Cherry MX Red (Linear) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "CherryMX Black" (substituted for Red) | `src/audio/mxblack-travel/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
-| `cherry_brown.mp3` | Cherry MX Brown (Tactile) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "CherryMX Brown" | `src/audio/mxbrown-travel/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
-| `topre.mp3` | Topre (Thocky) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "Turquoise" (used for local Topre profile) | `src/audio/turquoise/press/GENERIC_R0.mp3` | MIT – Copyright © 2021 Hai Nguyen |
+| `cherry_blue.ogg`, `cherry_blue_space.ogg`, `cherry_blue_enter.ogg`, `cherry_blue_backspace.ogg` | Cherry MX Blue (Clicky) | `soundpacks/keyboard/cherrymx-blue-abs/sound.ogg` – "CherryMX Blue - ABS keycaps" | `KeyT`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+| `cherry_red.ogg`, `cherry_red_space.ogg`, `cherry_red_enter.ogg`, `cherry_red_backspace.ogg` | Cherry MX Red (Linear) | `soundpacks/keyboard/cherrymx-red-abs/sound.ogg` – "CherryMX Red - ABS keycaps" | `KeyI`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+| `cherry_brown.ogg`, `cherry_brown_space.ogg`, `cherry_brown_enter.ogg`, `cherry_brown_backspace.ogg` | Cherry MX Brown (Tactile) | `soundpacks/keyboard/cherrymx-brown-abs/sound.ogg` – "CherryMX Brown - ABS keycaps" | `KeyQ`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+| `topre.ogg`, `topre_space.ogg`, `topre_enter.ogg`, `topre_backspace.ogg` | Topre (Thocky) | `soundpacks/keyboard/topre-purple-hybrid-pbt/sound.ogg` – "Topre Purple Hybrid - PBT keycaps" | `KeyM`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+
+These replace earlier samples whose ordinary key came from a different
+recording (Mechvibes' former `src/audio/*-travel` packs, no longer in the
+repository; Cherry MX Red used the Cherry MX Black recording), so the space,
+enter and backspace sounds did not match the other keys.
 
 ---
 
@@ -35,28 +47,6 @@ each profile's asset directory.
 | `nk_cream.wav` | NK Cream (Smooth Linear) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "NK Cream (original by Ryan)" | `src/audio/nk-cream/a.wav` | MIT – Copyright © 2021 Hai Nguyen; recording original by Ryan |
 | `holy_panda.mp3` | Holy Panda (Tactile Thock) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "Holy Pandas" | `src/audio/holy-pandas/GENERIC_R0.mp3` | MIT – Copyright © Thomas Lai (see upstream `src/audio/holy-pandas/LICENSE`) |
 | `typewriter.mp3` | Typewriter (Classic) | [daktilo](https://github.com/orhun/daktilo) | `sounds/keystroke.mp3` | MIT – Copyright © 2023–2024 Orhun Parmaksız |
-
----
-
-## Per-Key Samples
-
-Dedicated space bar, enter and backspace sounds for the profiles below were cut
-from the single-file sound packs in the current
-[Mechvibes](https://github.com/hainguyents13/mechvibes) repository (tag `v3.5.6`,
-commit `56d7135`). Each sample is the *press* half of the key's entry in the
-pack's `config.json`, mixed down to mono, trimmed of leading silence,
-level-matched to the profile's generic sample and encoded as Ogg Vorbis.
-
-| Files | Profile | Upstream sound pack | Upstream keys | License |
-|---|---|---|---|---|
-| `cherry_blue_space.ogg`, `cherry_blue_enter.ogg`, `cherry_blue_backspace.ogg` | Cherry MX Blue (Clicky) | `soundpacks/keyboard/cherrymx-blue-abs/sound.ogg` – "CherryMX Blue - ABS keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
-| `cherry_red_space.ogg`, `cherry_red_enter.ogg`, `cherry_red_backspace.ogg` | Cherry MX Red (Linear) | `soundpacks/keyboard/cherrymx-red-abs/sound.ogg` – "CherryMX Red - ABS keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
-| `cherry_brown_space.ogg`, `cherry_brown_enter.ogg`, `cherry_brown_backspace.ogg` | Cherry MX Brown (Tactile) | `soundpacks/keyboard/cherrymx-brown-abs/sound.ogg` – "CherryMX Brown - ABS keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
-| `topre_space.ogg`, `topre_enter.ogg`, `topre_backspace.ogg` | Topre (Thocky) | `soundpacks/keyboard/topre-purple-hybrid-pbt/sound.ogg` – "Topre Purple Hybrid - PBT keycaps" | `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
-
-These come from different recordings than the profiles' generic samples listed
-above, whose upstream paths (`src/audio/...`) no longer exist in the Mechvibes
-repository.
 
 ---
 

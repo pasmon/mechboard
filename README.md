@@ -197,7 +197,17 @@ file named `<rawFileName>_space`, `<rawFileName>_enter` or
 `<rawFileName>_backspace` in `app/src/main/res/raw/` (e.g. `my_switch_space.ogg`);
 no code change is needed. Keys without a dedicated file use the profile's
 generic sample. Trim leading silence from the file, otherwise the sound lags the
-key press.
+key press. Take all of a profile's sounds from the same recording, or the special
+keys sound like a different keyboard.
+
+`scripts/sounds/cut_mechvibes_pack.py` cuts all four sounds of a profile from a
+[Mechvibes](https://github.com/hainguyents13/mechvibes) single-file sound pack,
+trimmed and level-matched (needs ffmpeg and numpy):
+
+```bash
+python3 scripts/sounds/cut_mechvibes_pack.py \
+    mechvibes/soundpacks/keyboard/cherrymx-blue-abs cherry_blue app/src/main/res/raw
+```
 
 ---
 
