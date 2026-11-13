@@ -93,6 +93,25 @@ def write_ogg(samples, path):
         os.unlink(wav_path)
 
 
+def write_profile(samples, profile, out_dir, match_level=None):
+    """
+    Writes samples ({"": ordinary key, "_space": ..., ...}) as <profile><suffix>.ogg,
+    all with one gain, and returns that gain. With match_level, the gain makes the
+    ordinary key as loud (RMS) as that sample; it never lets a sample clip.
+    """
+    gain = 1.0
+    if match_level:
+        gain = rms(trim(decode(match_level))) / rms(samples[""])
+    loudest = max(np.max(np.abs(s)) for s in samples.values())
+    gain = min(gain, MAX_PEAK / loudest)
+
+    for suffix, sample in samples.items():
+        path = os.path.join(out_dir, f"{profile}{suffix}.ogg")
+        write_ogg(sample * gain, path)
+        print(f"{path}: {len(sample) / SAMPLE_RATE * 1000:.0f} ms", file=sys.stderr)
+    return gain
+
+
 def press(pack_dir, definitions, key):
     start, end = definitions[key]["timing"][0]
     return trim(decode(os.path.join(pack_dir, "sound.ogg"), start, end))
@@ -117,16 +136,7 @@ def main():
     for suffix, key in SPECIAL_KEYS.items():
         samples["_" + suffix] = press(args.pack_dir, definitions, key)
 
-    gain = 1.0
-    if args.match_level:
-        gain = rms(trim(decode(args.match_level))) / rms(samples[""])
-    loudest = max(np.max(np.abs(s)) for s in samples.values())
-    gain = min(gain, MAX_PEAK / loudest)
-
-    for suffix, sample in samples.items():
-        path = os.path.join(args.out_dir, f"{args.profile}{suffix}.ogg")
-        write_ogg(sample * gain, path)
-        print(f"{path}: {len(sample) / SAMPLE_RATE * 1000:.0f} ms", file=sys.stderr)
+    gain = write_profile(samples, args.profile, args.out_dir, args.match_level)
     print(f"{args.profile}: ordinary key {generic_key}, gain {gain:.2f}", file=sys.stderr)
 
 

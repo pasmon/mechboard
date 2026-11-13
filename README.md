@@ -6,25 +6,29 @@
 [![Min SDK](https://img.shields.io/badge/Android-API%2021%2B-brightgreen?logo=android)](https://developer.android.com/about/versions/lollipop)
 [![Language: Kotlin](https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 
-A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound effects**. Pick from nine sound profiles, toggle sounds on/off, and fine-tune the volume — all from a built-in settings screen.
+A QWERTY soft keyboard for Android with **authentic mechanical keyboard sound effects**. Pick from thirteen sound profiles, toggle sounds on/off, and fine-tune the volume — all from a built-in settings screen.
 
 ---
 
 ## Features
 
-- 🎹 **Nine sound profiles**
+- 🎹 **Thirteen sound profiles**
   | Profile | Switch type |
   |---|---|
   | Cherry MX Blue | Clicky |
   | Cherry MX Red | Linear |
   | Cherry MX Brown | Tactile |
+  | Cherry MX Black | Heavy Linear |
   | Topre | Thocky |
-  | Alps | Vintage |
+  | Blue Alps | Vintage Clicky |
   | NK Cream | Smooth Linear |
   | Holy Panda | Tactile Thock |
+  | Gateron Black Ink | Deep Linear |
+  | Kailh Box Navy | Heavy Clicky |
+  | Buckling Spring | IBM Model M |
   | Typewriter | Classic typewriter |
   | Silent | No sound |
-- ⌨️ **Sounds like typing, not like a loop** — the click plays the moment your finger lands, every keystroke varies slightly in pitch and loudness, and the Cherry MX and Topre profiles have their own space bar, enter and backspace sounds
+- ⌨️ **Sounds like typing, not like a loop** — the click plays the moment your finger lands, every keystroke varies slightly in pitch and loudness, and every switch profile has its own space bar, enter and backspace sounds, recorded on the same keyboard as its other keys (the typewriter has its own carriage return on enter)
 - 🔊 **Master on/off toggle** — silence all sounds instantly
 - 🔉 **Volume slider** (0 – 100 %) independent of system volume
 - ⚙️ **In-keyboard settings key** — opens the settings screen without leaving the current app
@@ -80,7 +84,7 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | Setting | Description | Default |
 |---|---|---|
 | Key sounds | Master on/off toggle for all sound effects | On |
-| Sound profile | Choose one of the nine profiles listed above | Cherry MX Blue |
+| Sound profile | Choose one of the thirteen profiles listed above | Cherry MX Blue |
 | Volume | Key-click volume independent of system volume (0 – 100) | 80 |
 | Keyboard language | English, Finnish, German, French or Spanish | English |
 | Auto-capitalisation | Start sentences with a capital letter, in text fields that ask for it | On |
@@ -115,7 +119,7 @@ Open the settings screen by tapping the **⚙ key** on the keyboard, or navigati
 | `SamplePlayer` | Thin interface over `SoundPool` (`SoundPoolSamplePlayer`) so `SoundManager` can be unit-tested with a fake |
 | `KeyKind` | Enum grouping key codes by how the key sounds: character, space, enter, backspace |
 | `SoundVariation` | Small random pitch (±4 %) and volume (up to −10 %) change applied to every keystroke |
-| `SoundProfile` | Enum of the nine profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
+| `SoundProfile` | Enum of the thirteen profiles; each carries an `id`, `displayName`, and optional `rawFileName` |
 | `SettingsActivity` | `AppCompatActivity` that hosts `SettingsFragment` |
 | `SettingsFragment` | `PreferenceFragmentCompat`; renders the settings listed above |
 | `PrefsKeys` | Plain object of `SharedPreferences` key constants (no Android dependency — keeps unit tests simple) |
@@ -179,7 +183,7 @@ with `versionName` `1.2.3` and `versionCode` `10203` (major × 10000 + minor × 
 
 ### Adding a new sound profile
 
-1. Place a WAV file in `app/src/main/res/raw/` (e.g. `my_switch.wav`).
+1. Place an audio file (OGG, WAV or MP3) in `app/src/main/res/raw/` (e.g. `my_switch.ogg`).
 2. Add a new entry to the `SoundProfile` enum:
    ```kotlin
    MY_SWITCH(
@@ -188,7 +192,9 @@ with `versionName` `1.2.3` and `versionCode` `10203` (major × 10000 + minor × 
        rawFileName = "my_switch"
    )
    ```
-3. That's it — `SoundManager` iterates all profiles dynamically.
+3. Credit the file's source and license in `CREDITS.md` (a unit test checks
+   every profile is listed there).
+4. That's it — `SoundManager` iterates all profiles dynamically.
 
 ### Adding a per-key sound to a profile
 
@@ -207,6 +213,17 @@ trimmed and level-matched (needs ffmpeg and numpy):
 ```bash
 python3 scripts/sounds/cut_mechvibes_pack.py \
     mechvibes/soundpacks/keyboard/cherrymx-blue-abs cherry_blue app/src/main/res/raw
+```
+
+`scripts/sounds/cut_key_files.py` does the same for sound sets that ship one
+file per key, such as [kbsim](https://github.com/tplai/kbsim)'s:
+
+```bash
+python3 scripts/sounds/cut_key_files.py holy_panda app/src/main/res/raw \
+    --key kbsim/src/assets/audio/holypanda/press/GENERIC_R0.mp3 \
+    --space kbsim/src/assets/audio/holypanda/press/SPACE.mp3 \
+    --enter kbsim/src/assets/audio/holypanda/press/ENTER.mp3 \
+    --backspace kbsim/src/assets/audio/holypanda/press/BACKSPACE.mp3
 ```
 
 ---

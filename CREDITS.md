@@ -4,49 +4,66 @@ This file documents the origin and license of every audio asset and word list bu
 
 ---
 
-## Cherry MX and Topre Profiles
+## How the samples are made
 
-Every sound of these four profiles — an ordinary key, the space bar, enter and
-backspace — is cut from one recording: a single-file sound pack in the
-[Mechvibes](https://github.com/hainguyents13/mechvibes) repository (tag
-`v3.5.6`, commit `56d7135`), so that all keys of a profile sound like the same
-keyboard. `scripts/sounds/cut_mechvibes_pack.py` does the cutting: each sample
-is the *press* half of the key's entry in the pack's `config.json`, mixed down
-to mono, trimmed of leading silence and faded out over its last 5 ms. All four
-samples of a profile get one gain, chosen so that the ordinary key is as loud
-as the profile's previous sample; the keys keep the loudness they have
-relative to each other in the recording. The ordinary key is the letter key of
-median loudness in the pack.
+Every profile has an ordinary key sound and, where its source recorded them,
+its own space bar, enter and backspace sounds. All samples of a profile come
+from one recording session, so that all keys sound like the same keyboard.
+Each sample is mixed down to mono, trimmed of leading silence and faded out
+over its last 5 ms. All samples of a profile get one gain, so the keys keep
+the loudness they have relative to each other in the recording; for a
+profile that existed before, the gain keeps the ordinary key as loud as the
+profile's previous sample (Blue Alps: as loud as clipping allows), and new
+profiles are levelled to a similar existing one.
+
+- `scripts/sounds/cut_mechvibes_pack.py` cuts the samples from a Mechvibes
+  single-file pack: the *press* half of each key's entry in the pack's
+  `config.json`. The ordinary key is the letter key of median loudness.
+- `scripts/sounds/cut_key_files.py` does the same for sound sets with one file
+  per key.
+
+---
+
+## Profiles from Mechvibes single-file packs
+
+From the [Mechvibes](https://github.com/hainguyents13/mechvibes) repository,
+tag `v3.5.6`, commit `56d7135` (these packs are unchanged at `v3.5.7`).
 
 | Files | Profile | Upstream sound pack | Upstream keys | License |
 |---|---|---|---|---|
 | `cherry_blue.ogg`, `cherry_blue_space.ogg`, `cherry_blue_enter.ogg`, `cherry_blue_backspace.ogg` | Cherry MX Blue (Clicky) | `soundpacks/keyboard/cherrymx-blue-abs/sound.ogg` – "CherryMX Blue - ABS keycaps" | `KeyT`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
 | `cherry_red.ogg`, `cherry_red_space.ogg`, `cherry_red_enter.ogg`, `cherry_red_backspace.ogg` | Cherry MX Red (Linear) | `soundpacks/keyboard/cherrymx-red-abs/sound.ogg` – "CherryMX Red - ABS keycaps" | `KeyI`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
 | `cherry_brown.ogg`, `cherry_brown_space.ogg`, `cherry_brown_enter.ogg`, `cherry_brown_backspace.ogg` | Cherry MX Brown (Tactile) | `soundpacks/keyboard/cherrymx-brown-abs/sound.ogg` – "CherryMX Brown - ABS keycaps" | `KeyQ`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
+| `cherry_black.ogg`, `cherry_black_space.ogg`, `cherry_black_enter.ogg`, `cherry_black_backspace.ogg` | Cherry MX Black (Heavy Linear) | `soundpacks/keyboard/cherrymx-black-abs/sound.ogg` – "CherryMX Black - ABS keycaps" | `KeyC`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
 | `topre.ogg`, `topre_space.ogg`, `topre_enter.ogg`, `topre_backspace.ogg` | Topre (Thocky) | `soundpacks/keyboard/topre-purple-hybrid-pbt/sound.ogg` – "Topre Purple Hybrid - PBT keycaps" | `KeyM`, `Space`, `Enter`, `Backspace` | MIT – Copyright © 2026 Hải Nguyễn |
 
-These replace earlier samples whose ordinary key came from a different
-recording (Mechvibes' former `src/audio/*-travel` packs, no longer in the
-repository; Cherry MX Red used the Cherry MX Black recording), so the space,
-enter and backspace sounds did not match the other keys.
+The Cherry MX Blue, Red, Brown and Topre samples replace earlier ones whose
+ordinary key came from a different recording (Mechvibes' former
+`src/audio/*-travel` packs, no longer in the repository; Cherry MX Red used
+the Cherry MX Black recording), so the space, enter and backspace sounds did
+not match the other keys.
 
 ---
 
-## Profiles with Unknown Provenance
+## Profiles from per-key recordings
 
-| File | Profile | Notes |
-|---|---|---|
-| `alps.wav` | Alps (Vintage) | Original source not recorded. Provenance is unknown. Should be replaced with a clearly licensed recording in a future update. |
-
----
-
-## New Profiles
-
-| File | Profile | Source project | Upstream file | License |
+| Files | Profile | Source project | Upstream files | License |
 |---|---|---|---|---|
-| `nk_cream.wav` | NK Cream (Smooth Linear) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "NK Cream (original by Ryan)" | `src/audio/nk-cream/a.wav` | MIT – Copyright © 2021 Hai Nguyen; recording original by Ryan |
-| `holy_panda.mp3` | Holy Panda (Tactile Thock) | [Mechvibes](https://github.com/hainguyents13/mechvibes) – "Holy Pandas" | `src/audio/holy-pandas/GENERIC_R0.mp3` | MIT – Copyright © Thomas Lai (see upstream `src/audio/holy-pandas/LICENSE`) |
-| `typewriter.mp3` | Typewriter (Classic) | [daktilo](https://github.com/orhun/daktilo) | `sounds/keystroke.mp3` | MIT – Copyright © 2023–2024 Orhun Parmaksız |
+| `nk_cream.ogg`, `nk_cream_space.ogg`, `nk_cream_enter.ogg`, `nk_cream_backspace.ogg` | NK Cream (Smooth Linear) | [Mechvibes](https://github.com/hainguyents13/mechvibes), commit `8be3f33` – "NK Cream (original by Ryan)" (pack removed from the repository in the next commit) | `soundpacks/keyboard/nk-cream/a.wav`, `space.wav`, `enter.wav`, `backspace.wav` | MIT – Copyright © 2026 Hải Nguyễn; recording original by Ryan |
+| `holy_panda.ogg`, `holy_panda_space.ogg`, `holy_panda_enter.ogg`, `holy_panda_backspace.ogg` | Holy Panda (Tactile Thock) | [kbsim](https://github.com/tplai/kbsim), commit `ba103f3` – "Holy Pandas" | `src/assets/audio/holypanda/press/GENERIC_R0.mp3`, `SPACE.mp3`, `ENTER.mp3`, `BACKSPACE.mp3` | MIT – Copyright © Thomas Lai |
+| `alps.ogg`, `alps_space.ogg`, `alps_enter.ogg`, `alps_backspace.ogg` | Blue Alps (Vintage Clicky) | [kbsim](https://github.com/tplai/kbsim), commit `ba103f3` – "SKCM Blue Alps" | `src/assets/audio/bluealps/press/GENERIC_R0.mp3`, `SPACE.mp3`, `ENTER.mp3`, `BACKSPACE.mp3` | MIT – Copyright © Thomas Lai |
+| `gateron_black_ink.ogg`, `gateron_black_ink_space.ogg`, `gateron_black_ink_enter.ogg`, `gateron_black_ink_backspace.ogg` | Gateron Black Ink (Deep Linear) | [kbsim](https://github.com/tplai/kbsim), commit `ba103f3` – "Gateron Black Inks" | `src/assets/audio/blackink/press/GENERIC_R0.mp3`, `SPACE.mp3`, `ENTER.mp3`, `BACKSPACE.mp3` | MIT – Copyright © Thomas Lai |
+| `box_navy.ogg`, `box_navy_space.ogg`, `box_navy_enter.ogg`, `box_navy_backspace.ogg` | Kailh Box Navy (Heavy Clicky) | [kbsim](https://github.com/tplai/kbsim), commit `ba103f3` – "Kailh Box Navies" | `src/assets/audio/boxnavy/press/GENERIC_R0.mp3`, `SPACE.mp3`, `ENTER.mp3`, `BACKSPACE.mp3` | MIT – Copyright © Thomas Lai |
+| `buckling_spring.ogg`, `buckling_spring_space.ogg`, `buckling_spring_enter.ogg`, `buckling_spring_backspace.ogg` | Buckling Spring (IBM Model M) | [kbsim](https://github.com/tplai/kbsim), commit `ba103f3` – "Buckling Spring" | `src/assets/audio/buckling/press/GENERIC_R0.mp3`, `SPACE.mp3`, `ENTER.mp3`, `BACKSPACE.mp3` | MIT – Copyright © Thomas Lai |
+| `typewriter.ogg`, `typewriter_enter.ogg` | Typewriter (Classic) | [daktilo](https://github.com/orhun/daktilo), commit `87c6032` – the `basic` preset, which pairs these two sounds | `sounds/keystroke.mp3`, `sounds/newline.mp3` (carriage return) | MIT – Copyright © 2023–2024 Orhun Parmaksız |
+
+The ordinary-key samples of NK Cream, Holy Panda and Typewriter are the same
+recordings as before (`nk_cream.wav`, `holy_panda.mp3`, `typewriter.mp3`),
+now trimmed and encoded like the others, with the matching special keys from
+the same source added. The typewriter has no dedicated space or backspace
+sound upstream, so those keys use its ordinary keystroke.
+
+The Blue Alps samples replace `alps.wav`, whose source was never recorded.
 
 ---
 
@@ -76,7 +93,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Holy Pandas MIT License
+## kbsim (and Holy Pandas) MIT License
 
 ```
 Copyright (c) Thomas Lai

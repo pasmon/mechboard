@@ -4,7 +4,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assume.assumeTrue
 import org.junit.Test
+import java.io.File
 
 class SoundProfileTest {
 
@@ -73,10 +75,14 @@ class SoundProfileTest {
             "cherry_blue",
             "cherry_red",
             "cherry_brown",
+            "cherry_black",
             "topre",
             "alps",
             "nk_cream",
             "holy_panda",
+            "gateron_black_ink",
+            "box_navy",
+            "buckling_spring",
             "typewriter",
             "silent"
         )
@@ -121,5 +127,16 @@ class SoundProfileTest {
     @Test
     fun `all profiles are non-null`() {
         SoundProfile.values().forEach { assertNotNull(it) }
+    }
+
+    @Test
+    fun `every profile with audio is listed in CREDITS`() {
+        val credits = File("../CREDITS.md")
+        assumeTrue("CREDITS.md not found", credits.isFile)
+        val text = credits.readText()
+        val missing = SoundProfile.values()
+            .mapNotNull { it.rawFileName }
+            .filterNot { "`$it." in text }
+        assertEquals("Profiles whose samples CREDITS.md does not list", emptyList<String>(), missing)
     }
 }
