@@ -41,12 +41,32 @@ class SystemBarInsetsTest {
 
         val actionBar = activity.findViewById<View>(androidx.appcompat.R.id.action_bar_container)
         val settings = activity.findViewById<View>(R.id.settings_container)
+        // The list is kept clear either by placing its container between the bars
+        // or by padding a container that fills the window; both must end up the same.
+        val listTop = settings.topInWindow() + settings.paddingTop
+        val listBottom = settings.topInWindow() + settings.height - settings.paddingBottom
         assertEquals("action bar starts below the status bar", STATUS_BAR, actionBar.topInWindow())
-        assertEquals("list starts below the action bar", STATUS_BAR + actionBar.height, settings.topInWindow())
-        assertEquals(
-            "list ends above the navigation bar",
-            HEIGHT - NAVIGATION_BAR, settings.topInWindow() + settings.height
-        )
+        assertEquals("list starts below the action bar", STATUS_BAR + actionBar.height, listTop)
+        assertEquals("list ends above the navigation bar", HEIGHT - NAVIGATION_BAR, listBottom)
+    }
+
+    @Test
+    fun `settings list pads itself by the bars when the action bar overlays it`() {
+        // On Android 15 and later the window draws edge to edge: the content fills
+        // the window and is told how much of it the system and action bars cover.
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        val settings = activity.findViewById<View>(R.id.settings_container)
+        val covered = WindowInsetsCompat.Builder()
+            .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, STATUS_BAR + ACTION_BAR, 0, 0))
+            .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, NAVIGATION_BAR))
+            .setInsets(WindowInsetsCompat.Type.displayCutout(), Insets.of(CUTOUT, 0, 0, 0))
+            .build()
+        ViewCompat.dispatchApplyWindowInsets(settings, covered)
+
+        assertEquals(STATUS_BAR + ACTION_BAR, settings.paddingTop)
+        assertEquals(NAVIGATION_BAR, settings.paddingBottom)
+        assertEquals(CUTOUT, settings.paddingLeft)
+        assertEquals(0, settings.paddingRight)
     }
 
     @Test
@@ -123,6 +143,7 @@ class SystemBarInsetsTest {
         const val WIDTH = 1080
         const val HEIGHT = 2400
         const val STATUS_BAR = 80
+        const val ACTION_BAR = 150
         const val NAVIGATION_BAR = 120
         const val CUTOUT = 90
     }
